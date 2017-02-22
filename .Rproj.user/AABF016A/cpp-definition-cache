@@ -1,0 +1,38 @@
+[
+    {
+        "definitions" : [
+        ],
+        "file" : "C:/Users/Asad/Documents/___00THESIS WORK/uniSolve/src/FortranFromC.cpp",
+        "file_last_write" : 1390432303
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "C:/Users/Asad/Documents/___00THESIS WORK/uniSolve/src/FortranFromC.h",
+        "file_last_write" : 1387770880
+    },
+    {
+        "definitions" : [
+            {
+                "column" : 6,
+                "file" : "C:/Users/Asad/Documents/___00THESIS WORK/uniSolve/src/ryansdp.cpp",
+                "kind" : 6,
+                "line" : 11,
+                "name" : "tf_dp(int, double *, double, double *)",
+                "parent_name" : "",
+                "usr" : "c:@F@tf_dp#I#*d#d#S0_#"
+            },
+            {
+                "column" : 6,
+                "file" : "C:/Users/Asad/Documents/___00THESIS WORK/uniSolve/src/ryansdp.cpp",
+                "kind" : 6,
+                "line" : 121,
+                "name" : "soft_thresh(int, double *, double, double *)",
+                "parent_name" : "",
+                "usr" : "c:@F@soft_thresh#I#*d#d#S0_#"
+            }
+        ],
+        "file" : "C:/Users/Asad/Documents/___00THESIS WORK/uniSolve/src/ryansdp.cpp",
+        "file_last_write" : 1390432896
+    }
+]

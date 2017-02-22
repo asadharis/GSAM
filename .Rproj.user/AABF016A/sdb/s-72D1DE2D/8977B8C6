@@ -1,0 +1,17 @@
+{
+    "contents" : "tf_dp <- function(y, y.ord, lambda, theta) {\n  .C(\"tf_dp_R\",\n        n = as.integer(length(y)),\n        y = as.double(y.ord),\n        lam1 = as.double(lambda),\n        beta = as.double(theta))\n}\n",
+    "created" : 1487804885862.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2115067446",
+    "id" : "8977B8C6",
+    "lastKnownWriteTime" : 1487805593,
+    "path" : "~/___00THESIS WORK/uniSolve/R/ryan.R",
+    "project_path" : "R/ryan.R",
+    "properties" : {
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

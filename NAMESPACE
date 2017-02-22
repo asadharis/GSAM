@@ -1,0 +1,3 @@
+useDynLib(uniSolve)
+export(tf_dp)
+export(spline_s)

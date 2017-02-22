@@ -1,0 +1,17 @@
+{
+    "contents" : "useDynLib(uniSolve)\nexport(tf_dp)\nexport(spline_s)\n",
+    "created" : 1487804731160.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1005643254",
+    "id" : "982BABF8",
+    "lastKnownWriteTime" : 1487806566,
+    "path" : "~/___00THESIS WORK/uniSolve/NAMESPACE",
+    "project_path" : "NAMESPACE",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_namespace"
+}
