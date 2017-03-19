@@ -19,11 +19,13 @@ extern "C"{
 	    int *ideriv,
 	    int *ierr);
 
-void callSS_Fortran(double* y, double* x, double *sy, double *lambda, int *n_point)
+void callSS_Fortran(double* y, double* x, double *sy, double *lambda, int *n_point,
+                    double* yg, double* xg, int* ngrid)
 {
   double lam = (*lambda);
   double n = (*n_point);
-  double h = log(2*lam/n); //log lambda
+  double h = log(2*lam); //log lambda
+  //double h = log(lam); //log lambda
   int npoint = n; //number of points
 
   double wght[npoint];
@@ -34,17 +36,17 @@ void callSS_Fortran(double* y, double* x, double *sy, double *lambda, int *n_poi
     sy[i] = 0;
     wght[i] = 1;
     diag[i] = 0;
-  }    
+  }
   diag[0] = 1;
 
   double cv = 0;
-  int ngrid = 0;
-  double xg = 0;
-  double yg = 0;
+  //int ngrid = 0;
+  //double xg = 0;
+  //double yg = 0;
 
   int job[3]; //Assumes Xs are sorted
-  job[0] = 0; job[1] = 0; job[2] = 1;
-  int ideriv = 0;
+  job[0] = 0; job[1] = 2; job[2] = 1;
+  int ideriv = 2;
   int ierr = 0;
 
   css_(&h,
@@ -56,11 +58,12 @@ void callSS_Fortran(double* y, double* x, double *sy, double *lambda, int *n_poi
        &trace,
        diag,
        &cv,
-       &ngrid,
-       &xg,
-       &yg,
+       ngrid,
+       xg,
+       yg,
        job,
        &ideriv,
        &ierr);
 }
 }
+

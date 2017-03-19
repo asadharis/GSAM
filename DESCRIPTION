@@ -7,3 +7,6 @@ Maintainer: Bjorn Winckler <bjorn.winckler@gmail.com>
 Depends: R (>= 2.14.1)
 Description: Function to reverse an integer vector.
 License: BSD
+Imports:
+    Rcpp (>= 0.12.2), Matrix
+LinkingTo: Rcpp, RcppArmadillo
