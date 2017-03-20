@@ -1,4 +1,5 @@
 library(ggplot2)
+library(splines)
 source("Models.R")
 # We begin with scenario 1.
 # All functions are step functions

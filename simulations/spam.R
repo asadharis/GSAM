@@ -1,20 +1,24 @@
 library(SAM)
-source('helper_functions.R')
 
-SimSPAM <- function(dat, ...) {
+SimSPAM <- function(dat, p = 3,...) {
   x <- dat$x
   y <- dat$y
 
-  fit <- samQL(x, y, ...)
+  fit <- samQL(x, y, p = p, ...)
+  #fit <- samQL(x, y, lambda.min.ratio = 1e-4, nlambda = 50, p  = 3)
+
   # Evaluate the MSE_true
   yhat <- predict.spam(fit, newdata = x)$values
-
   mse.true <- colMeans((yhat - dat$f0)^2)
+
+  # plot(fit$lambda,mse.true, log = "yx")
 
   # Find index of best min MSE_test
   yhat.test <- predict.spam(fit, dat$x.test)$values
   mse.test <- colMeans((yhat.test - dat$y.test)^2)
   ind <- which.min(mse.test)
+
+  # plot(fit$lambda, mse.test, log = "xy")
 
   # Find MSE_val and MSE_TRUE_BEST
   yhat.val <- predict.spam(fit, dat$x.val)$values
@@ -22,14 +26,16 @@ SimSPAM <- function(dat, ...) {
   mse.true.best <- colMeans((dat$f0 - yhat)^2)[ind]
 
   # Find the number of active features in best set.
-  beta.best <- matrix(fit$w[,ind], nrow = fit$p)
-  active.set <- which(colMeans(abs(beta.best)) != 0)
+  active.set <- apply(fit$w, 2, function(vec){
+    sum(colSums(abs(matrix(vec, nrow = fit$p))) != 0)*1
+  })
 
   return(list("mse.true.best" = mse.true.best,
               "mse.val" = mse.val,
               "mse.true" = mse.true,
               "lam" = fit$lambda,
-              "act.set" = active.set))
+              "act.set" = active.set,
+              "ind" = ind))
 }
 
 

@@ -149,7 +149,7 @@ spline_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2,
   for(i in 1:max.iter) {
     for(j in 1:p) {
       res <- y - apply(initpars[, -j],1,sum)
-      initpars[ord[,j], j] <- solve.prox(res, res[ord[,j]], x[ord[,j],j], rep(0, n), lambda1, lambda2)
+      initpars[ord[,j], j] <- solve.prox.norm2(res, res[ord[,j]], x[ord[,j],j], rep(0, n), lambda1, lambda2)
     }
     if(mean((initpars - old.pars)^2) < tol ) {
       return(initpars)
@@ -183,8 +183,12 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   # nlam = 50
   # norm.sq <- FALSE
 
+  n <- length(y)
+  p <- ncol(x)
+
   x.mean <- apply(x, 2, mean)
   y.mean <- mean(y)
+
 
   x.cen <- scale(x, scale = FALSE)
   y.cen <- y - y.mean
@@ -228,7 +232,7 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   class(obj) <- "sobolev"
 
 
-  return(ans)
+  return(obj)
 }
 
 
@@ -244,7 +248,8 @@ predict.sobolev <- function(obj, new.data) {
   ans <- array(0, dim = c(dim(new.data), nlam) )
   for(i in 1:nlam) {
     for(j in 1:p) {
-      ans[,j,i] <- approx(new.dat.cen[, j], obj$f_hat[,j,i], new.dat.cen[, j])$y
+      ans[,j,i] <- approx(obj$x.cen[, j], obj$f_hat[,j,i], new.dat.cen[, j],
+                          rule = 2)$y
     }
   }
   return(ans)

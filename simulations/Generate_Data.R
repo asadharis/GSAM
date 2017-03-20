@@ -14,8 +14,8 @@ source("Models.R")
 #   x, x.test, x.val: The vector of x-values at which we fit our model.
 #   FUN: The function equal to the scenario function used.
 
-GenerateData <- function(n = 150, p = 100, SNR = 10, seed = 1,
-                         scenario) {
+GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
+                         scenario = scen1) {
 
   #n = 150; p = 100; SNR = 10; seed = 1
   #scenario = scen1

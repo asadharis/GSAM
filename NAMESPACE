@@ -2,10 +2,8 @@ useDynLib(uniSolve)
 
 importFrom(Rcpp, evalCpp)
 
-export(tf_dp)
-export(tf_test)
-export(spline_s)
-export(get.pen)
-export(solve.prox)
-export(ssp_one)
-export(spline_one)
+export(tf.norm)
+export(predict.trendfilter)
+
+export(sobolev.norm)
+export(predict.sobolev)
