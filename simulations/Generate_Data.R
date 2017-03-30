@@ -15,12 +15,12 @@ source("Models.R")
 #   FUN: The function equal to the scenario function used.
 
 GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
-                         scenario = scen1) {
+                         scenario = scen1, x.seed = 0) {
 
   #n = 150; p = 100; SNR = 10; seed = 1
   #scenario = scen1
   # Generate a fixed deign matrix
-  set.seed(1)
+  set.seed(x.seed)
   x <- matrix(runif(n * p, min = -2.5, 2.5), ncol = p, nrow = n)
   y.no.noise <- rowSums(scenario(x[, 1:4]))  # Function values at points x.
   noise.var <- var(y.no.noise)/SNR  # Variance of error terms.

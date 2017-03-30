@@ -18,6 +18,7 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
   n <- length(y.ord)
   f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
               lambda = n*lambda2)$beta[,1]
+  #f_hat2 <- genlasso::trendfilter(y = y.ord, pos = x.ord, ord = 0)
 
   # We return the desired value
   max((1 - lambda1/mean(f_hat^2)), 0)*f_hat
@@ -52,13 +53,16 @@ tf_one <- function(y, y.mean, x, x.mean, ord, k = 0, lambda1, lambda2,
 
   old.pars <- initpars
 
+  #p <- 96
   # Begin loop for block coordinate descent
   for(i in 1:max.iter) {
     for(j in 1:p) {
+      print(j)
       res <- y - apply(initpars[, -j], 1, sum)
-      initpars[ord[,j], j] <- solve.prox.tf(res[ord[, j]], x[ord[, j], j],
-                                            k = k, lambda1, lambda2)
+      initpars[ord[,j], j] <- solve.prox.tf(res[ord[, j]],
+                                            x[ord[, j], j], k = k, lambda1, lambda2)
     }
+
     if(mean((initpars - old.pars)^2) < tol ) {
       return(initpars)
     } else {
@@ -82,7 +86,7 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   # lambda2 = lambda^2.
 
   # n <- 200
-  # p <- 4
+  # p <- 100
   # x = matrix(rnorm(n*p), ncol = p);
   # y = sin(3*x[,1]) + rnorm(n,sd = 0.1);
   # max.iter = 100; tol = 1e-4;
@@ -130,15 +134,12 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
               "ord" = ord,
               "lam" = lam.seq,
               "k" = k)
-  class(obj) <- "trendfilter"
+  class(obj) <- "tf"
   return(obj)
 }
 
 
-predict.trendfilter <- function(obj, new.data) {
-
-  # new.data <- matrix(rnorm(n*p), ncol = p)
-
+predict.tf <- function(obj, new.data) {
   new.dat.cen <- scale(new.data, scale = FALSE, center = obj$x.mean)
 
   nlam <- length(obj$lam)

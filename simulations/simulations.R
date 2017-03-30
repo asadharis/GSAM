@@ -1,6 +1,6 @@
 
-simulation <- function(seed, n = 100,
-                       num.vars = 6, SNR = 10,
+simulation <- function(seed=1, n = 200,
+                       num.vars = 100, SNR = 10,
                        scen = scen1) {
   library(glmgen)
   library(uniSolve)
@@ -10,7 +10,11 @@ simulation <- function(seed, n = 100,
   source('ssp.R')
   source('trendfilter.R')
 
-  dat <- GenerateData(seed = seed, n = n, p = num.vars, SNR = SNR)
+  # seed=1; n = 200;
+  # num.vars = 100; SNR = 10;
+  # scen = scen1
+  dat <- GenerateData(seed = seed, n = n, p = num.vars,
+                      SNR = SNR, scenario = scen)
 
   mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50)
   mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50)
