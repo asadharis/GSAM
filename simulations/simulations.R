@@ -1,7 +1,7 @@
 
 simulation <- function(seed=1, n = 200,
                        num.vars = 100, SNR = 10,
-                       scen = scen1) {
+                       scen.num = 1) {
   library(glmgen)
   library(uniSolve)
   source('Generate_Data.R')
@@ -12,7 +12,21 @@ simulation <- function(seed=1, n = 200,
 
   # seed=1; n = 200;
   # num.vars = 100; SNR = 10;
-  # scen = scen1
+  # scen.num <- 1
+
+  if(scen.num == 1){
+    scen = scen1
+  } else if(scen.num == 2){
+    scen = scen2
+  } else if(scen.num == 3){
+    scen = scen3
+  } else if(scen.num == 4){
+    scen = scen4
+  } else if(scen.num == 5){
+    scen = scen5
+  }
+
+
   dat <- GenerateData(seed = seed, n = n, p = num.vars,
                       SNR = SNR, scenario = scen)
 
@@ -24,10 +38,10 @@ simulation <- function(seed=1, n = 200,
   mod.ssp.sq <- SimSPLINE(dat, sq.norm = TRUE,
                           lambda.max = 1, lambda.min.ratio = 1e-3)
   mod.ssp <- SimSPLINE(dat, sq.norm = FALSE,
-                          lambda.max = 1, lambda.min.ratio = 1e-3)
+                       lambda.max = 1, lambda.min.ratio = 1e-3)
 
   mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 1,
-                  lambda.min.ratio = 1e-3)
+                     lambda.min.ratio = 1e-3)
   mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = 1,
                      lambda.min.ratio = 1e-3)
   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 1,
@@ -35,19 +49,20 @@ simulation <- function(seed=1, n = 200,
   # mod.tf.k3 <- SimTF(dat, k = 3, lambda.max = 1,
   #                    lambda.min.ratio = 1e-3)
 
-  plot(mod.ssp$mse.true,  log = "y")
-  lines(mod.tf.k0$mse.true, col = "blue")
-  lines(mod.tf.k1$mse.true, col = "red")
-  lines(mod.tf.k2$mse.true, col = "green")
+  # plot(mod.ssp$mse.true,  log = "y")
+  # lines(mod.tf.k0$mse.true, col = "blue")
+  # lines(mod.tf.k1$mse.true, col = "red")
+  # lines(mod.tf.k2$mse.true, col = "green")
 
-  filename <- paste0("results/seed", seed, ".RData")
+  dirname <- paste0("scen", scen.num,"_p", num.vars, "_n", n)
+  filename <- paste0(dirname, "/seed", seed, ".RData")
 
-  if(dir.exists("results")) {
+  if(dir.exists(dirname)) {
     save(list = c(paste0("mod.spam", c(3,6,10,20)),
                   "mod.ssp", "mod.ssp.sq",
                   paste0("mod.tf.k", 0:2)), file = filename)
   } else {
-    dir.create("results")
+    dir.create(dirname)
     save(list = c(paste0("mod.spam", c(3,6,10,20)),
                   "mod.ssp", "mod.ssp.sq",
                   paste0("mod.tf.k", 0:2)), file = filename)
@@ -69,21 +84,4 @@ source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 
-if(scen.num == 1) {
-  simulation(seed, n, num.vars, SNR, scen1)
-  q(save = "no")
-} else if (scen.num == 2) {
-  simulation(seed, n, num.vars, SNR, scen2)
-  q(save = "no")
-} else if (scen.num == 3) {
-  simulation(seed, n, num.vars, SNR, scen3)
-  q(save = "no")
-} else if (scen.num == 4) {
-  simulation(seed, n, num.vars, SNR, scen4)
-  q(save = "no")
-} else if (scen.num == 5) {
-  simulation(seed, n, num.vars, SNR, scen5)
-  q(save = "no")
-}
-
-
+simulation(seed, n, num.vars, SNR, scen.num)
