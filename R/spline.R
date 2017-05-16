@@ -115,51 +115,6 @@ ssp_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2, max.iter = 100,
 
 
 
-spline_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2,
-                       max.iter = 100, tol = 1e-4, initpars = NULL) {
-  # THis function solves the optimization problem:
-  #
-  # argmin (1/2n) ||y - sum_{j=1}^{p}f_j||_n^2 +
-  #                       \sum_{j=1}^p (lambda1)||f_j||_n +
-  #                                    (lambda2)*J(f_j).
-  #
-  # I.e. Similar to the SSP problem but with the
-  #      squared sobolev norm.
-  #
-  # y: A response vector assumed to be centered
-  # y.mean: Mean of uncentered response vector
-  # x: A n*p matrix of covariates assumed to be column centered
-  # x.mean: Means of uncentered design x.
-  # ord: Matrix of dim n*p giving the orders/ranks of each coavairte.
-  # lambda1, lambda2: Scalar tuning parameters
-  # max.iter: maximum number of iterations for block coordinate descent
-  # tol: Tolerance for algorithm
-  # intpars: Initial parameters, taken as 0 if none provided
-
-  n <- length(y)
-  p <- ncol(x)
-
-  if(is.null(initpars)) {
-    initpars <- matrix(0, ncol = p, nrow = n)
-  }
-
-  old.pars <- initpars
-
-  # Begin loop for block coordinate descent
-  for(i in 1:max.iter) {
-    for(j in 1:p) {
-      res <- y - apply(initpars[, -j],1,sum)
-      initpars[ord[,j], j] <- solve.prox.norm2(res, res[ord[,j]], x[ord[,j],j], rep(0, n), lambda1, lambda2)
-    }
-    if(mean((initpars - old.pars)^2) < tol ) {
-      return(initpars)
-    } else {
-      old.pars <- initpars
-    }
-  }
-  return(initpars)
-}
-
 sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
                          initpars = NULL,
                          lambda.max = 3,
