@@ -119,8 +119,7 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
                          initpars = NULL,
                          lambda.max = 3,
                          lambda.min.ratio = 1e-3,
-                         nlam = 50,
-                         norm.sq = FALSE) {
+                         nlam = 50) {
   # This function solves the sobolev norm prooblems with both the
   # norm and the norm-squared.
   # In this function we will solve the optmization problem for a
@@ -161,19 +160,11 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   ans <- array(0, dim = c(n,p,nlam))
   for(i in 1:nlam) {
     #print(i)
-    if(norm.sq) {
-      ans[,, i] <- spline_one(y.cen, y.mean, x.cen, x.mean,
-                              ord, lam.seq[i], lam.seq[i]^2,
-                             max.iter = max.iter,
-                             tol = tol, initpars = initpars)
-      initpars <- ans[,, i]
-    } else {
-      ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
-                              ord, lam.seq[i], lam.seq[i]^2,
-                              max.iter = max.iter,
-                              tol = tol, initpars = initpars)
-      initpars <- ans[,, i]
-    }
+    ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
+                         ord, lam.seq[i], lam.seq[i]^2,
+                         max.iter = max.iter,
+                         tol = tol, initpars = initpars)
+    initpars <- ans[,, i]
   }
 
   obj <- list("f_hat" = ans,
@@ -182,11 +173,8 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
        "x.mean" = x.mean,
        "y.mean" = y.mean,
        "ord" = ord,
-       "lam" = lam.seq,
-       "norm.sq" = norm.sq)
+       "lam" = lam.seq)
   class(obj) <- "sobolev"
-
-
   return(obj)
 }
 

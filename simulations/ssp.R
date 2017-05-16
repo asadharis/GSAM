@@ -1,11 +1,11 @@
 library(uniSolve)
 
-SimSPLINE <- function(dat, sq.norm = FALSE, ...) {
+SimSPLINE <- function(dat, ...) {
   x <- dat$x
   y <- dat$y
 
-  fit <- sobolev.norm(dat$y, dat$x, norm.sq = sq.norm, ...)
-  # fit <- sobolev.norm(dat$y, dat$x, norm.sq = sq.norm, lambda.max = 1,
+  fit <- sobolev.norm(dat$y, dat$x,  ...)
+  # fit <- sobolev.norm(dat$y, dat$x,  lambda.max = 1,
   #                     lambda.min.ratio = 1e-3)
 
   fit.vals <- apply(fit$f_hat, c(1,3),sum)

@@ -24,3 +24,4 @@ src/*.dll
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+.Rproj.user

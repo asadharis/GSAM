@@ -35,10 +35,7 @@ simulation <- function(seed=1, n = 200,
   mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50)
   mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50)
 
-  mod.ssp.sq <- SimSPLINE(dat, sq.norm = TRUE,
-                          lambda.max = 1, lambda.min.ratio = 1e-3)
-  mod.ssp <- SimSPLINE(dat, sq.norm = FALSE,
-                       lambda.max = 1, lambda.min.ratio = 1e-3)
+  mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
 
   mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 1,
                      lambda.min.ratio = 1e-3)
@@ -59,12 +56,12 @@ simulation <- function(seed=1, n = 200,
 
   if(dir.exists(dirname)) {
     save(list = c(paste0("mod.spam", c(3,6,10,20)),
-                  "mod.ssp", "mod.ssp.sq",
+                  "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   } else {
     dir.create(dirname)
     save(list = c(paste0("mod.spam", c(3,6,10,20)),
-                  "mod.ssp", "mod.ssp.sq",
+                  "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   }
 }
