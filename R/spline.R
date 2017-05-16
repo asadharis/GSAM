@@ -38,13 +38,13 @@ solve.prox <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
     obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lam_x)
     lam_x*sqrt(get.pen(obj)) - lambda2/2
   }
-  if(tempf(lambda2) < 0) {
+  if(tempf(lambda2*1e+2) < 0) {
     #obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lambda2)
     b1 <- cov(x.ord,y.ord)/var(x.ord)
     b0 <- mean(y.ord) - (b1*mean(x.ord))
     f_hat <- b0 + (b1*x.ord)
   } else {
-    lam <- uniroot(tempf, c(lambda2*1e-4,lambda2))$root
+    lam <- uniroot(tempf, c(lambda2*1e-4,lambda2*1e+2))$root
     f_hat <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lam)$sy
   }
 
