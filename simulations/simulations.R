@@ -30,10 +30,10 @@ simulation <- function(seed=1, n = 200,
   dat <- GenerateData(seed = seed, n = n, p = num.vars,
                       SNR = SNR, scenario = scen)
 
-  mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50)
-  mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50)
-  mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50)
-  mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50)
+  mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50, lambda.min.ratio = 1e-4)
+  mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 1e-4)
+  mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 1e-4)
+  mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 1e-4)
 
   mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
 
