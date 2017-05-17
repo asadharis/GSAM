@@ -26,10 +26,11 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
   # of size < n. On inspection, it appears this happens when the x.ord has
   # repeated measurements or measurements <1e-6 apart. The lines of code below
   # aims to resolve this issue.
+
   if(length(f_hat) != n){
     # Find where in x.ord, two consecutive values are < 1e-6
     ind.s <- which(diff(x.ord) < 1e-6)
-    R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
+    f_hat <- R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
   }
 
 
