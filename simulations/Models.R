@@ -42,10 +42,26 @@ func.spam4 <- function(x) {
 
 # Finally we define the hills function
 # similar to that from Ryan Tibshirani, trend filtering paper.
-func.hills <- function(x, knots = c(-2.5, -0.5, 0.7, 1, 1.3, 1.6, 1.9, 2.2),
-                       vals = c(-1, 0.5,  -0.6, -0.1, 0.2, -0.5, 0.4, -0.7, 0.3)){
-  ns(x, knots = knots)%*%vals
-  #plot(x,ns(x, knots = knots)%*%mb)
+func.hills <- function(x, split = 0, vals = c(1, 1, 10),
+                       rev = FALSE){
+
+  ans <- rep(NA, length(x))
+  if(!rev){
+    ans[x<split] <-  vals[1] + sin(vals[2]*x[x<split])
+
+    eps <- (vals[2]/vals[3])*cos(vals[2]*split)/(cos(vals[3]*split))
+    delta <- vals[1] + sin(vals[2]*split) - eps*sin(vals[3]*split)
+
+    ans[x>=split] <- delta + eps*sin(vals[3]*x[x>=split])
+  } else {
+    ans[x>split] <-  vals[1] + sin(vals[2]*x[x>split])
+
+    eps <- (vals[2]/vals[3])*cos(vals[2]*split)/(cos(vals[3]*split))
+    delta <- vals[1] + sin(vals[2]*split) - eps*sin(vals[3]*split)
+
+    ans[x<=split] <- delta + eps*sin(vals[3]*x[x<=split])
+  }
+  ans
 }
 
 
@@ -124,15 +140,12 @@ scen4 <- function(x) {
 # Scenario 5: Hills functions
 scen5 <- function(x) {
   # x: A n*4 matrix for the 4 non-zero functions
-  x1 <- func.hills(x[,1])
-  x2 <- func.hills(x[,2], knots = c(-2, 0, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9),
-                   vals = c(-1.5, 1,  -1, 0, 0.5, -0.5, 0.5, -0.5, 0.3))
+  x1 <- func.hills(x[,1], 0, c(1, 1, 12))
+  x2 <- func.hills(x[,2], 1, c(1, 2, 8))
 
-  x3 <- func.hills(x[,3], knots = c(-2.3, -2.1, -1.9, -1.7, -1, 0, 1, 2),
-                   vals = c(-1, 0.5,  -1, 0, 0.5, -0.5, 0.5, -0.5, 0.3))
+  x3 <- func.hills(x[,3], -1, c(0, 3,15), rev = TRUE)
 
-  x4 <- func.hills(x[,4], knots = c(-2.1, -2, -1.9, -1.7, -1, 0, 1, 2),
-                   vals = c(-0.5, 0.7,  -0.5, 0.5, 0.5, 0.4, -0.5, 0.5, -1))
+  x4 <- func.hills(x[,4], 1, c(0, 2.5, 10), rev = TRUE)
 
   cbind(x1,x2,x3,x4)
 
