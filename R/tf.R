@@ -17,7 +17,22 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
 
   n <- length(y.ord)
   f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-              lambda = n*lambda2)$beta[,1]
+              lambda = n*lambda2)$beta[, 1]
+
+  ######################################################################
+  ################ ISSUE IN package glmgen #############################
+  ######################################################################
+  # THere seems to be an issue in the package glmgen, where it returns solutions
+  # of size < n. On inspection, it appears this happens when the x.ord has
+  # repeated measurements or measurements <1e-6 apart. The lines of code below
+  # aims to resolve this issue.
+  if(length(f_hat) != n){
+    # Find where in x.ord, two consecutive values are < 1e-6
+    ind.s <- which(diff(x.ord) < 1e-6)
+    R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
+  }
+
+
   #f_hat2 <- genlasso::trendfilter(y = y.ord, pos = x.ord, ord = 0)
 
   # We return the desired value
@@ -57,7 +72,7 @@ tf_one <- function(y, y.mean, x, x.mean, ord, k = 0, lambda1, lambda2,
   # Begin loop for block coordinate descent
   for(i in 1:max.iter) {
     for(j in 1:p) {
-      print(j)
+      #print(j)
       res <- y - apply(initpars[, -j], 1, sum)
       initpars[ord[,j], j] <- solve.prox.tf(res[ord[, j]],
                                             x[ord[, j], j], k = k, lambda1, lambda2)
@@ -117,7 +132,7 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
 
   ans <- array(0, dim = c(n,p,nlam))
   for(i in 1:nlam) {
-    print(i)
+    #print(i)
     ans[,, i] <- tf_one(y.cen, y.mean, x.cen, x.mean,
                             ord, k= k, lam.seq[i], lam.seq[i]^2,
                             max.iter = max.iter,
