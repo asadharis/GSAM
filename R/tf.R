@@ -28,8 +28,11 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
   # aims to resolve this issue.
 
   if(length(f_hat) != n){
-    # Find where in x.ord, two consecutive values are < 1e-6
-    ind.s <- which(diff(x.ord) < 1e-6)
+    # Find how many values are missing
+    n.res <- n - length(f_hat)
+    # Find where in x.ord we have values too close to each other.
+    # Find the smallest 'n.res' values
+    ind.s <- order(diff(x.ord))[1:n.res]
     f_hat <- R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
   }
 
