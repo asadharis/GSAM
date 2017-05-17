@@ -12,7 +12,7 @@ simulation2 <- function(seed=1,
 
   # seed=1; n.seq = c(50, 100, 200, 500);
   # num.vars = 6; SNR = 10;
-  # scen.num <- 1
+  # scen.num <- 5
 
   if(scen.num == 1){
     scen = scen1

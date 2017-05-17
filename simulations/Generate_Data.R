@@ -17,8 +17,8 @@ source("Models.R")
 GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
                          scenario = scen1, x.seed = 0) {
 
-  #n = 150; p = 100; SNR = 10; seed = 1
-  #scenario = scen1
+  #n = 50; p = 6; SNR = 10; seed = 1
+  #scenario = scen5
   # Generate a fixed deign matrix
   set.seed(x.seed)
   x <- matrix(runif(n * p, min = -2.5, 2.5), ncol = p, nrow = n)
