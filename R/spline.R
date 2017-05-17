@@ -44,7 +44,7 @@ solve.prox <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
     b0 <- mean(y.ord) - (b1*mean(x.ord))
     f_hat <- b0 + (b1*x.ord)
   } else {
-    lam <- uniroot(tempf, c(lambda2*1e-4,lambda2*1e+2))$root
+    lam <- uniroot(tempf, c(lambda2*1e-10,lambda2*1e+2))$root
     f_hat <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lam)$sy
   }
 
