@@ -10,9 +10,9 @@ simulation2 <- function(seed=1,
   source('ssp.R')
   source('trendfilter.R')
 
-  # seed=1; n.seq = c(50, 100, 200, 500);
-  # num.vars = 100; SNR = 10;
-  # scen.num <- 5
+  # seed=1;
+  # num.vars = 6; noise.var = 1;
+  # scen.num = 1
 
   if(scen.num == 1){
     scen = scen1
@@ -38,7 +38,8 @@ simulation2 <- function(seed=1,
     mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
     mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
 
-    mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)$mse.true.best
+    mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
+
 
     mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 1,
                        lambda.min.ratio = 1e-3)$mse.true.best
@@ -47,14 +48,16 @@ simulation2 <- function(seed=1,
     mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 1,
                        lambda.min.ratio = 1e-3)$mse.true.best
     c("spam3" = mod.spam3, "spam6" = mod.spam6,
-      "spam10" = mod.spam10, "spam20" = mod.spam20, "ssp" = mod.ssp,
-     "tf0" = mod.tf.k0, "tf1" = mod.tf.k1, "tf2" = mod.tf.k2)
+      "spam10" = mod.spam10, "spam20" = mod.spam20,
+      "ssp" = mod.ssp$mse.true.best,
+     "tf0" = mod.tf.k0, "tf1" = mod.tf.k1, "tf2" = mod.tf.k2,
+     "lam.ssp" = mod.ssp$ind)
 
   })
 
   colnames(ans.mat) <- n.seq
 
-  dirname <- paste0("sim2scen", scen.num,"_p", num.vars, "_n", n)
+  dirname <- paste0("sim2scen", scen.num,"_p", num.vars)
   filename <- paste0(dirname, "/seed", seed, ".RData")
 
   if(dir.exists(dirname)) {
