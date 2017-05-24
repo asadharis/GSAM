@@ -77,7 +77,7 @@ simulation2 <- function(seed=1,
 args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
 num.vars <- as.numeric(args[[2]])
-SNR <- as.numeric(args[[3]])
+noise.var <- as.numeric(args[[3]])
 scen.num <- as.numeric(args[[4]])
 
 library(glmgen)
@@ -88,4 +88,5 @@ source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 
-simulation2(seed, num.vars, SNR, scen.num)
+simulation2(seed, num.vars, noise.var, scen.num)
+q(save = "no")

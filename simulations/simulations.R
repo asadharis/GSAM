@@ -34,6 +34,9 @@ simulation <- function(seed=1, n = 200,
   mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 5e-4)
   mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 5e-4)
   mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-4)
+  mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-4)
+  mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-4)
+
 
   mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
 
@@ -55,12 +58,12 @@ simulation <- function(seed=1, n = 200,
   filename <- paste0(dirname, "/seed", seed, ".RData")
 
   if(dir.exists(dirname)) {
-    save(list = c(paste0("mod.spam", c(3,6,10,20)),
+    save(list = c(paste0("mod.spam", c(3,6,10,20,30,50)),
                   "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   } else {
     dir.create(dirname)
-    save(list = c(paste0("mod.spam", c(3,6,10,20)),
+    save(list = c(paste0("mod.spam", c(3,6,10,20,30,50)),
                   "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   }
@@ -70,7 +73,7 @@ args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
 n <- as.numeric(args[[2]])
 num.vars <- as.numeric(args[[3]])
-SNR <- as.numeric(args[[4]])
+noise.var <- as.numeric(args[[4]])
 scen.num <- as.numeric(args[[5]])
 
 library(glmgen)
@@ -81,4 +84,5 @@ source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 
-simulation(seed, n, num.vars, SNR, scen.num)
+simulation(seed, n, num.vars, noise.var, scen.num)
+q(save = "no")
