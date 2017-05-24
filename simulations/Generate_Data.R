@@ -6,6 +6,7 @@ source("Models.R")
 #   p: The number of covariates
 #   SNR: The signal-to-noise ratio = Var(f0(x))/Var(noise).
 #   scenario: The function used to specify the simulation setting.
+#   x.seed: Depecrated, now the seed for x will depend on simulation number.
 #
 # Returns:
 # A list with the following objects:
@@ -20,6 +21,7 @@ GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
   #n = 50; p = 6; SNR = 10; seed = 1
   #scenario = scen5
   # Generate a fixed deign matrix
+  x.seed <- seed %% 50
   set.seed(x.seed)
   x <- matrix(runif(n * p, min = -2.5, 2.5), ncol = p, nrow = n)
   y.no.noise <- rowSums(scenario(x[, 1:4]))  # Function values at points x.
