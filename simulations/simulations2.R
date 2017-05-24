@@ -37,13 +37,13 @@ simulation2 <- function(seed=1,
     mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
     mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
     mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
-    mod.spam25 <- SimSPAM(dat, p = 25, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
+
     mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
-    mod.spam40 <- SimSPAM(dat, p = 40, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
+
     mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
 
 
-    mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-4)
+    mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
 
 
     mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 1,
@@ -54,8 +54,7 @@ simulation2 <- function(seed=1,
                        lambda.min.ratio = 1e-3)$mse.true.best
     c("spam3" = mod.spam3, "spam6" = mod.spam6,
       "spam10" = mod.spam10, "spam20" = mod.spam20,
-      "spam25" = mod.spam25, "spam30" = mod.spam30,
-      "spam40" = mod.spam40, "spam50" = mod.spam50,
+      "spam30" = mod.spam30, "spam50" = mod.spam50,
       "ssp" = mod.ssp$mse.true.best,
      "tf0" = mod.tf.k0, "tf1" = mod.tf.k1, "tf2" = mod.tf.k2,
      "lam.ssp" = mod.ssp$ind)
