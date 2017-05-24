@@ -17,25 +17,7 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
 
   n <- length(y.ord)
   f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-              lambda = n*lambda2)$beta[, 1]
-
-  ######################################################################
-  ################ ISSUE IN package glmgen #############################
-  ######################################################################
-  # THere seems to be an issue in the package glmgen, where it returns solutions
-  # of size < n. On inspection, it appears this happens when the x.ord has
-  # repeated measurements or measurements <1e-6 apart. The lines of code below
-  # aims to resolve this issue.
-
-  if(length(f_hat) != n){
-    # Find how many values are missing
-    n.res <- n - length(f_hat)
-    # Find where in x.ord we have values too close to each other.
-    # Find the smallest 'n.res' values
-    ind.s <- order(diff(x.ord))[1:n.res]
-    f_hat <- R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
-  }
-
+              lambda = n*lambda2, thinning = FALSE)$beta[, 1]
 
   #f_hat2 <- genlasso::trendfilter(y = y.ord, pos = x.ord, ord = 0)
 
