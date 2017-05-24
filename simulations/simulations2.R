@@ -1,6 +1,6 @@
 
 simulation2 <- function(seed=1,
-                       num.vars = 100, SNR = 10,
+                       num.vars = 6, noise.var = 1,
                        scen.num = 1) {
   library(glmgen)
   library(uniSolve)
@@ -31,7 +31,7 @@ simulation2 <- function(seed=1,
   ans.mat <- sapply(n.seq, function(n){
     print(n)
     dat <- GenerateData(seed = seed, n = n, p = num.vars,
-                        SNR = SNR, scenario = scen)
+                        noise.var = noise.var, scenario = scen)
 
     mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
     mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 5e-4)$mse.true.best
