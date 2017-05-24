@@ -4,7 +4,7 @@ source("Models.R")
 # Args:
 #   n: The sample size.
 #   p: The number of covariates
-#   SNR: The signal-to-noise ratio = Var(f0(x))/Var(noise).
+#   noise.var: The variance of the error.
 #   scenario: The function used to specify the simulation setting.
 #   x.seed: Depecrated, now the seed for x will depend on simulation number.
 #
@@ -15,7 +15,7 @@ source("Models.R")
 #   x, x.test, x.val: The vector of x-values at which we fit our model.
 #   FUN: The function equal to the scenario function used.
 
-GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
+GenerateData <- function(n = 150, p = 4, noise.var = 1, seed = 1,
                          scenario = scen1, x.seed = 0) {
 
   #n = 50; p = 6; SNR = 10; seed = 1
@@ -25,7 +25,8 @@ GenerateData <- function(n = 150, p = 4, SNR = 10, seed = 1,
   set.seed(x.seed)
   x <- matrix(runif(n * p, min = -2.5, 2.5), ncol = p, nrow = n)
   y.no.noise <- rowSums(scenario(x[, 1:4]))  # Function values at points x.
-  noise.var <- var(y.no.noise)/SNR  # Variance of error terms.
+  #noise.var <- var(y.no.noise)/SNR  # Variance of error terms.
+
 
   # Generate validation and test sets of the same size. Approx half of n
   n.test <- floor(n/2)
