@@ -11,7 +11,7 @@ simulation <- function(seed=1, n = 200,
   source('trendfilter.R')
 
   # seed=1; n = 200;
-  # num.vars = 100; SNR = 10;
+  # num.vars = 6; noise.var = 1;
   # scen.num <- 1
 
   if(scen.num == 1){

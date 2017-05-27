@@ -30,12 +30,24 @@ SimSPAM <- function(dat, p = 3,...) {
     sum(colSums(abs(matrix(vec, nrow = fit$p))) != 0)*1
   })
 
+  # Find the fitted functions of the best lambda value
+  # i.e. the lambda value which minizes the test Error.
+  fhat.best <- spam.est.func(fit.spam = fit, dat$x, ind)
+  xout <- seq(-2.5, 2.5, length = 1000)
+  f1 <- approx(dat$x[,1], fhat.best[,1], xout = xout, rule = 2)$y
+  f2 <- approx(dat$x[,2], fhat.best[,2], xout = xout, rule = 2)$y
+  f3 <- approx(dat$x[,3], fhat.best[,3], xout = xout, rule = 2)$y
+  f4 <- approx(dat$x[,4], fhat.best[,4], xout = xout, rule = 2)$y
+
+  fhat.best2 <- cbind(f1,f2,f3,f4)
+
+
   return(list("mse.true.best" = mse.true.best,
               "mse.val" = mse.val,
               "mse.true" = mse.true,
               "lam" = fit$lambda,
               "act.set" = active.set,
-              "ind" = ind))
+              "ind" = ind, "fhat" = fhat.best2))
 }
 
 
