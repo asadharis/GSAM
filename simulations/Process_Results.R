@@ -9,10 +9,14 @@ process.object <- function(obj.name = "mod.spam10",
   # obj.name = "mod.spam10";
   # obj.name = "mod.ssp"
   # scen.num = 1; p = 6; n = 200
+  # method.spam = 
   
   dir <- paste0("scen", scen.num, "_p", p, "_n", n)
-  ans <- vector("list", 100)
-  for(i in 1:100) {
+  files <- list.files(dir)
+  nsim <- length(files)
+  
+  ans <- vector("list", nsim)
+  for(i in 1:nsim) {
     load(paste0(dir, "/seed", i, ".RData"))
     ans[[i]] <- eval(parse(text = obj.name))
   }
@@ -36,10 +40,59 @@ process.object <- function(obj.name = "mod.spam10",
   mse.best <- mean(do.call("c", lapply(ans, function(x){(x$mse.true.best)})))
   mse.val <- mean(do.call("c", lapply(ans, function(x){(x$mse.val)})))
   act.val <- mean(do.call("c", lapply(ans, function(x){ x$act.set[x$ind]})))
-  #lam.val <- do.call("c", lapply(ans, function(x){(x$lam[x$ind])}))
   list("mse" = mse, "lam" = lam, "mse.best" = mse.best,
        "mse.val" = mse.val, "act.val" = act.val)
 }
+
+plot.object <- function(obj.name = "mod.ssp",
+                        scen.num = 1, p = 6, n = 200) {
+  
+  require(ggplot2)
+  source("Models.R")
+  # obj.name = "mod.ssp"
+  # scen.num = 1; p = 6; n = 200
+  dir <- paste0("scen", scen.num, "_p", p, "_n", n)
+  files <- list.files(dir)
+  nsim <- length(files)
+  if(scen.num == 1){
+    scen = scen1
+  } else if(scen.num == 2){
+    scen = scen2
+  } else if(scen.num == 3){
+    scen = scen3
+  } else if(scen.num == 4){
+    scen = scen4
+  } else if(scen.num == 5){
+    scen = scen5
+  }
+  
+  xs <- seq(-2.5, 2.5, length = 1e+3)
+  f0 <- scen(cbind(xs,xs,xs,xs))
+  
+  dat <- data.frame("x" = rep(xs, 4), "y" = as.numeric(f0),
+                    "Function" = factor(rep(paste0("Function ", 1:4), each = 1e+3)))
+  g1 <- ggplot(dat, aes(x = x, y = y, color = Function)) + 
+    geom_line(size = 1.4) + facet_grid(.~Function)+
+    guides(color=FALSE)
+  # Sample 50 random data sets to plot functions
+  set.seed(1)
+  samp <- sample(1:500, size = 100)
+  
+  for(i in samp) {
+    load(paste0(dir, "/", files[i]))
+    fhat <- eval(parse(text = obj.name))$fhat
+    dat.temp <- data.frame("x" = rep(xs, 4), "y" = as.numeric(fhat),
+                           "Function" = factor(rep(paste0("Function ", 1:4), each = 1e+3)))
+    g1 <- g1 + geom_line(data = dat.temp, aes(x = x, y=y), alpha = 0.1)
+  }
+   
+  g1 + geom_line(size = 1.4)
+}
+
+plot.object(n=500)
+
+
+
 
 process.results <- function(scen.num = 1, p = 6, n = 200) {
   #scen.num = 1; p = 6; n = 200
@@ -75,17 +128,17 @@ process.results <- function(scen.num = 1, p = 6, n = 200) {
     guides(linetype = guide_legend(keywidth = 2.1))
 }
 
-process.results(scen.num = 1, p =6)
-
-
-process.results(scen.num = 1, p =100)
-
-
-process.results(scen.num = 4, p =6)
-
-
-process.results(scen.num = 5, p =100)
-
+# process.results(scen.num = 1, p =6)
+# 
+# 
+# process.results(scen.num = 1, p =100)
+# 
+# 
+# process.results(scen.num = 4, p =6)
+# 
+# 
+# process.results(scen.num = 5, p =100)
+# 
 
 # Varying p and function of lambda. 
 
