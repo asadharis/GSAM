@@ -149,7 +149,8 @@ predict.tf <- function(obj, new.data) {
   ans <- array(0, dim = c(dim(new.data), nlam) )
   for(i in 1:nlam) {
     for(j in 1:p) {
-      ans[,j,i] <- approx(new.dat.cen[, j], obj$f_hat[,j,i], new.dat.cen[, j])$y
+      ans[,j,i] <- approx(obj$x.cen[,j], obj$f_hat[,j,i], new.dat.cen[, j],
+                          rule = 2)$y
     }
   }
   return(ans)
