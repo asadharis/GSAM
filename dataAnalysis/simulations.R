@@ -27,6 +27,10 @@ run.sim <- function(seed = 1, nvars = 100) {
   
   
   # SPAM RESULTS!
+  spam1 <- simulation.spam(x.train, y.train, x.test, y.test, 
+                           folds = folds, nbasis = 1)
+  spam2 <- simulation.spam(x.train, y.train, x.test, y.test, 
+                           folds = folds, nbasis = 2)
   spam3 <- simulation.spam(x.train, y.train, x.test, y.test, 
                               folds = folds, nbasis = 3)
   spam4 <- simulation.spam(x.train, y.train, x.test, y.test, 
@@ -35,8 +39,6 @@ run.sim <- function(seed = 1, nvars = 100) {
                            folds = folds, nbasis = 5)
   spam6 <- simulation.spam(x.train, y.train, x.test, y.test, 
                            folds = folds, nbasis = 6)
-  spam7 <- simulation.spam(x.train, y.train, x.test, y.test, 
-                           folds = folds, nbasis = 7)
   
   # SSP RESULTS!
   ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds)
@@ -49,11 +51,11 @@ run.sim <- function(seed = 1, nvars = 100) {
   filename <- paste0("riboflavin_nvars", nvars)
 
   if(dir.exists(filename)) {
-    save(spam3, spam4,spam5, spam6,spam7,  ssp, tf0, tf1, tf2,
+    save(spam1, spam2, spam3, spam4,spam5, spam6, ssp, tf0, tf1, tf2,
          file = paste0(filename, "/seed", seed, ".RData"))
   } else {
     dir.create(filename)
-    save(spam3, spam4,spam5, spam6,spam7,  ssp, tf0, tf1, tf2,
+    save(spam1, spam2, spam3, spam4,spam5, spam6, ssp, tf0, tf1, tf2,
          file = paste0(filename, "/seed", seed, ".RData"))
     }
 }
