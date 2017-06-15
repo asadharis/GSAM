@@ -87,7 +87,7 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
   onese.plot <- list("yhat" = full.mod$f_hat[,act.set$onese,ind.1se],
                      "xmat" = x.train[, act.set$onese])
   return(list("err" = ans, "sparse" = act.set,
-              "type" = func.type, "lam.val" = lam.val,
+              "lam.val" = lam.val,
               "min.plot" = min.plot,
               "onese.plot" = onese.plot))
 }
