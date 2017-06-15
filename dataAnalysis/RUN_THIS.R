@@ -7,7 +7,6 @@ run.sim <- function(seed = 1, nvars = 100) {
   source("trendfiltering.R")
   
   dat <- get.data(100)
-  rm(riboflavin)
   
   n <- length(dat$y)
 

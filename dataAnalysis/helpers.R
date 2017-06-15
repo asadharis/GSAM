@@ -1,11 +1,10 @@
 
 get.data <- function(nvars = 100) {
-  require(qut)
-  data("riboflavin")
+  load("DataFile.RData")
   
-  vars <- apply(riboflavin$x, 2, var)
+  vars <- apply(dat$x, 2, var)
   ind <- tail(order(vars), nvars)
   
-  list("y" = riboflavin$y, "x" = riboflavin$x[,ind])
+  list("y" = dat$y, "x" = dat$x[,ind])
   
 }
