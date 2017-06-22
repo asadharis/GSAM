@@ -48,12 +48,6 @@ run.sim <- function(seed = 1, nvars = 1000) {
   tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1)
   tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2)
   
-  hb1 <- simulation.HB(x.train, y.train,x.test,y.test,
-                      folds, nbasis = 5,m.const = 1)
-  hb2 <- simulation.HB(x.train, y.train,x.test,y.test,
-                       folds, nbasis = 5,m.const = 2)
-  hb3 <- simulation.HB(x.train, y.train,x.test,y.test,
-                       folds, nbasis = 5,m.const = 3)
   
   filename <- paste0("riboflavin_nvars", nvars)
 

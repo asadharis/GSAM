@@ -1,4 +1,4 @@
-# This file loads the data for analysis. 
+# This file loads the data for analysis.
 
 # Load clinical data
 clinical <- read.csv("data/clinical.csv", na.strings = "[Not Available]")
@@ -30,8 +30,13 @@ names(x) <- rna.gene
 
 dat <- as.data.frame(cbind("PSA" = y, x))
 
-# Finally we obtain the data set with complete cases. 
+# Finally we obtain the data set with complete cases.
 dat <- dat[complete.cases(dat),]
-dat <- log(dat + 0.1)
 
+inds <- which(apply(dat,2,function(x){all(x>0)}))
+dat <- dat[,inds]
+
+dat <- log(dat)
+
+save("dat", file = "DataFile.RData")
 
