@@ -12,7 +12,7 @@ cv.spam <- function(x.train, y.train, folds, lam.seq, ...){
 
   pred.errors <- matrix(NA, ncol = length(lam.seq), nrow = num.folds)
   for(i in 1:num.folds) {
-    #print(i)
+    print(i)
     # Obtain the index of things we will train on this round.
     temp.ind <- which(folds != i)
 
@@ -49,7 +49,7 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   p <- ncol(x.train)
   J <- nbasis
   full.mod <- samQL(x.train, y.train,
-                    nlambda = 50, lambda.min.ratio = 0.01,
+                    nlambda = 50, lambda.min.ratio = 1e-4,
                     p = nbasis, ...)
 
   cv <- cv.spam(x.train, y.train, folds = folds,

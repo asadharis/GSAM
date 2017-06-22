@@ -1,5 +1,5 @@
 
-run.sim <- function(seed = 1, nvars = 100) {
+run.sim <- function(seed = 1, nvars = 1000) {
   require(uniSolve)
   source("spam.R")
   source("helpers.R")
@@ -15,9 +15,9 @@ run.sim <- function(seed = 1, nvars = 100) {
   
   # We only use the seed value to split the data into training/test.
   set.seed(seed)
-  train <- sample(1:n, 50)
-  x.train <- dat$x[train,]
-  x.test <- dat$x[-train,]
+  train <- sample(1:n, floor(n*.75))
+  x.train <- as.matrix(dat$x[train,])
+  x.test <- as.matrix(dat$x[-train,])
   y.train <- dat$y[train]
   y.test <- dat$y[-train]
   
