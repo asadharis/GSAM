@@ -5,6 +5,6 @@ get.data <- function(nvars = 100) {
   vars <- apply(dat[,-1], 2, var)
   ind <- tail(order(vars), nvars)
   
-  list("y" = dat[,1], "x" = dat[,ind + 1])
+  list("y" = dat[,1], "x" = dat[,ind +1])
   
 }

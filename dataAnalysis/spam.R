@@ -78,6 +78,9 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   if(class(act.set) == "matrix") {
     act.set <- list(act.set[,1], act.set[,2])
   }
+  if(is.numeric(act.set)) {
+    act.set <- list(act.set[1], act.set[2])
+  }
 
   # Then we obtain the lambda values which gave us these results.
   names(act.set) <- names(ans)
