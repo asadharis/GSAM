@@ -25,3 +25,6 @@ src/*.dll
 vignettes/*.html
 vignettes/*.pdf
 .Rproj.user
+
+# Data files
+dataAnalysis/data/
