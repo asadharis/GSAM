@@ -12,10 +12,35 @@ ord <- order(x)
 x.ord <- x[ord]
 y.ord <- y[ord]
 
+
+ans <- solve.prox(y,y.ord, x.ord, theta,lambda1 = 0.1, lambda2 = 0.1^2)
+ans2 <- cpp_solve_prox(y.ord,x.ord,0.1,0.1^2, n, 500)
+
 obj <- spline_s(y,y.ord, x.ord, theta, 1e-5)
 
 plot(x,y)
 lines(obj$x,obj$sy, type = "l", col = "red")
+
+
+obj2 <- cpp_spline(y.ord, x.ord, lambda = 1e-5, n, n_grid = 500)
+lines(obj2$x,obj2$sy, type = "l", col = "blue")
+
+obj3 <- cpp_spline_raw(y.ord, x.ord, lambda = 1e-5, n, n_grid = 500)
+
+lambda2 <- 0.01
+
+tempf <- function(lam_x) {
+  obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lam_x)
+  #get.pen(obj)
+  lam_x*sqrt(get.pen(obj)) - lambda2/2
+}
+
+tempf2 <- function(lam_x) {
+  cpp_temp_func(lam_x,y.ord,x.ord,n,500,lambda2)
+}
+
+##########################
+
 
 obj2 <- tf_dp(y,y.ord,1,rep(0,n))
 lines(x.ord, obj2$beta)

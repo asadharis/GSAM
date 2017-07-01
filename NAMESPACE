@@ -10,3 +10,6 @@ export(predict.tf)
 
 export(sobolev.norm)
 export(predict.sobolev)
+
+export(solve.prox)
+export(cpp_solve_prox)

@@ -23,6 +23,7 @@ ind.rna <- which(rna.ids %in% inter.ids)
 
 # Generate the response vector
 y <- clinical$psa_result_preop[ind.clinical]
+y <- clinical$psa_value[ind.clinical]# $psa_result_preop[ind.clinical]
 # Obtain covariate matrix
 x <- rna[,ind.rna]
 x <- as.data.frame(t(x))
@@ -33,10 +34,10 @@ dat <- as.data.frame(cbind("PSA" = y, x))
 # Finally we obtain the data set with complete cases.
 dat <- dat[complete.cases(dat),]
 
-inds <- which(apply(dat,2,function(x){all(x>0)}))
-dat <- dat[,inds]
+#inds <- which(apply(dat,2,function(x){all(x>0)}))
+#dat <- dat[,inds]
 
-dat <- log(dat)
+dat <- log(dat + 0.1)
 
 save("dat", file = "DataFile.RData")
 

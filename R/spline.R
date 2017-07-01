@@ -9,7 +9,8 @@ spline_s <- function(y, y.ord, x.ord, theta, lambda){
   .C("callSS_Fortran", y = as.double(y.ord),
      x = as.double(x.ord), sy = as.double(theta),
      lambda = as.double(lambda), n_point = as.integer(n),
-     yg = as.double(rep(0,n.grid)), xg = as.double(rep(0,n.grid)), ngrid = as.integer(n.grid))
+     yg = as.double(rep(0,n.grid)), xg = as.double(rep(0,n.grid)), ngrid = as.integer(n.grid),
+     iderv = as.integer(2))
 }
 
 get.pen <- function(obj) {
@@ -26,7 +27,7 @@ solve.prox <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
   # To do this we first solve the prox problem
   #   f^hat_lambda2 <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda2)*sqrt(J(f))
   #
-  # Which requires us to find the root of the equation
+  # Which requires us to find the root of thf_hate equation
   # x*sqrt(J)(f^tilde_x) - lambda2/2
   # where
   # f^tilde_x <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (x)*J(f)
@@ -51,21 +52,6 @@ solve.prox <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
   # Finally we return the desired value
   max((1 - lambda1/mean(f_hat^2)), 0)*f_hat
 
-}
-
-# Solves the proximal problem for the sobolev norm
-solve.prox.norm2 <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
-  # Now want to solve the optimization problem.
-  # minimize (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda1)*||f|| +(lambda2)*J(f)
-  #
-  # To do this we first solve the prox problem
-  #   f^hat_lambda2 <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda2)*J(f)
-  #
-  n <- length(y)
-  f_hat <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lambda2)$sy
-
-  # Finally we return the desired value
-  max((1 - lambda1/mean(f_hat^2)), 0)*f_hat
 }
 
 
