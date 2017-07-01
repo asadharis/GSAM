@@ -31,7 +31,7 @@ solve.prox <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
   # x*sqrt(J)(f^tilde_x) - lambda2/2
   # where
   # f^tilde_x <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (x)*J(f)
-  #
+
   require(stats)
 
   n <- length(y)

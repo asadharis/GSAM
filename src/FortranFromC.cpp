@@ -241,6 +241,17 @@ arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double GetLogistic(arma::vec y,
+                   arma::mat f_hat, double intercept,
+                   int n) {
+
+  arma::vec lin_part = sum(f_hat, 1);
+
+  return   accu(log(1 + exp((-1 * y) % (intercept + lin_part)))) / n;
+}
+
+
+
 // [[Rcpp::export]]
 arma::mat cpp_spp_one(arma::vec y, double y_mean, arma::vec x, double x_mean,
                       arma::mat ord, double lambda1, double lambda2,
