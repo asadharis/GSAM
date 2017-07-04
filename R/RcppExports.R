@@ -21,3 +21,7 @@ cpp_solve_prox <- function(y_ord, x_ord, lambda1, lambda2, n, n_grid) {
     .Call('uniSolve_cpp_solve_prox', PACKAGE = 'uniSolve', y_ord, x_ord, lambda1, lambda2, n, n_grid)
 }
 
+cpp_spp_one <- function(y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter = 100L, tol = 1e-4, step_size = 1, alpha = 0.5) {
+    .Call('uniSolve_cpp_spp_one', PACKAGE = 'uniSolve', y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter, tol, step_size, alpha)
+}
+

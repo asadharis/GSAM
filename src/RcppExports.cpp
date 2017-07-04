@@ -86,3 +86,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_spp_one
+arma::mat cpp_spp_one(arma::vec y, arma::mat x_ord, arma::umat ord, arma::umat ranks, double lambda1, double lambda2, arma::mat init_fhat, double init_intercept, int n, int p, int max_iter, double tol, double step_size, double alpha);
+RcppExport SEXP uniSolve_cpp_spp_one(SEXP ySEXP, SEXP x_ordSEXP, SEXP ordSEXP, SEXP ranksSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP init_fhatSEXP, SEXP init_interceptSEXP, SEXP nSEXP, SEXP pSEXP, SEXP max_iterSEXP, SEXP tolSEXP, SEXP step_sizeSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x_ord(x_ordSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type ord(ordSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type ranks(ranksSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type init_fhat(init_fhatSEXP);
+    Rcpp::traits::input_parameter< double >::type init_intercept(init_interceptSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_spp_one(y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter, tol, step_size, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}

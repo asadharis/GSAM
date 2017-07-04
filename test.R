@@ -2,11 +2,42 @@ set.seed(1)
 n <- 100
 
 x <- runif(n, min = -2.5, max = 2.5)
-y <- sin(3*x) + rnorm(n, sd = 0.1)
+pr <- 1/(1+ exp(-(sin(3*x))))
+y <- rbinom(n, size = 1, prob = pr)
+y[y==0] <- -1
 theta <- rep(0,length(y))
 par(mfrow = c(1,1))
 plot(x,y)
 # lambda <- 0.01
+
+
+x_mat <- cbind(x, runif(n,-2.5,2.5),runif(n,-2.5,2.5),runif(n,-2.5,2.5),runif(n,-2.5,2.5))
+ord_mat <- apply(x_mat, 2, function(vec){
+  order(vec) - 1
+})
+
+rank_mat <- apply(x_mat, 2, function(vec){
+  rank(vec) - 1
+})
+
+
+x_mat_ord <- apply(x_mat, 2, function(vec){
+  vec[order(vec)]
+})
+
+p <- ncol(x_mat)
+
+ans <- cpp_spp_one(y, x_mat_ord,
+            ord_mat, rank_mat, lambda1 = 1.1e-3, lambda2 = (1.1e-3)^2,
+            init_fhat = matrix(0, ncol = p, nrow = n), init_intercept = 0,
+            n, p,
+            max_iter = 100000, tol = 1e-4,
+            step_size = 1, alpha = 0.4)
+
+
+plot(x_mat[,1], ans[,1])
+plot(x_mat[,2], ans[,2])
+
 
 ord <- order(x)
 x.ord <- x[ord]
