@@ -87,7 +87,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_spp_one
-arma::mat cpp_spp_one(arma::vec y, arma::mat x_ord, arma::umat ord, arma::umat ranks, double lambda1, double lambda2, arma::mat init_fhat, double init_intercept, int n, int p, int max_iter, double tol, double step_size, double alpha);
+List cpp_spp_one(arma::vec y, arma::mat x_ord, arma::umat ord, arma::umat ranks, double lambda1, double lambda2, arma::mat init_fhat, double init_intercept, int n, int p, int max_iter, double tol, double step_size, double alpha);
 RcppExport SEXP uniSolve_cpp_spp_one(SEXP ySEXP, SEXP x_ordSEXP, SEXP ordSEXP, SEXP ranksSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP init_fhatSEXP, SEXP init_interceptSEXP, SEXP nSEXP, SEXP pSEXP, SEXP max_iterSEXP, SEXP tolSEXP, SEXP step_sizeSEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

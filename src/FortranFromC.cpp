@@ -390,7 +390,7 @@ arma::field<mat> LineSearch(double alpha, double step_size,
 
 
 // [[Rcpp::export]]
-arma::mat cpp_spp_one(arma::vec y, arma::mat x_ord,
+List cpp_spp_one(arma::vec y, arma::mat x_ord,
                       arma::umat ord, arma::umat ranks,
                       double lambda1, double lambda2,
                       arma::mat init_fhat, double init_intercept,
@@ -437,7 +437,7 @@ arma::mat cpp_spp_one(arma::vec y, arma::mat x_ord,
 
     double temp_res = norm(new_ans(1) - old_ans(1), "fro")/(pow(n*p, 0.5))
     + norm(new_ans(0) - old_ans(0), "fro");
-    Rcout << "Criteria: " << temp_res << "\n";
+    //Rcout << "Criteria: " << temp_res << "\n";
     if(temp_res <= tol) {
       converged = true;
     } else {
@@ -445,6 +445,9 @@ arma::mat cpp_spp_one(arma::vec y, arma::mat x_ord,
       old_ans = new_ans;
     }
   }
-  return new_ans(1);
+
+  return List::create(Named("fhat") = new_ans(1),
+                      Named("intercept") = as_scalar(new_ans(0)),
+                      Named("conv") = converged );
 }
 

@@ -101,39 +101,50 @@ ssp_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2, max.iter = 100,
 
 
 
-sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
-                         initpars = NULL,
+sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
+                         initpars = NULL, initintercept = 0,
                          lambda.max = 3,
                          lambda.min.ratio = 1e-3,
-                         nlam = 50) {
-  # This function solves the sobolev norm prooblems with both the
-  # norm and the norm-squared.
+                         nlam = 50, step = 1, alpha = 0.5) {
+  # This function solves the sobolev norm prooblem
   # In this function we will solve the optmization problem for a
   # sequence of lambda values using warm starts.
   # We solve the above lambda values for the lambda1 = lambda and
   # lambda2 = lambda^2.
-
+  # set.seed(1)
   # n <- 200
   # p <- 4
-  # y = rnorm(n); x = matrix(rnorm(n*p), ncol = p);
-  # max.iter = 100; tol = 1e-4;
+  # y = rbinom(n, size = 1, prob = 0.5); x = matrix(rnorm(n*p), ncol = p);
+  # max.iter = 1e+4; tol = 1e-4;
   # initpars = NULL;
-  # lambda.max = 3;
-  # lambda.min.ratio = 1e-3;
+  # initintercept = NULL;
+  # lambda.max = 1;
+  # lambda.min.ratio = 1e-6;
   # nlam = 50
-  # norm.sq <- FALSE
+  # step = 1
+  # alpha = 0.5
+  # family = "binomial"
+
+  if(family == "binomial"){
+    y[y==0] <- -1
+  }
 
   n <- length(y)
   p <- ncol(x)
 
-  x.mean <- apply(x, 2, mean)
-  y.mean <- mean(y)
+  if(family == "gaussian") {
+    x.mean <- apply(x, 2, mean)
+    y.mean <- mean(y)
 
 
-  x.cen <- scale(x, scale = FALSE)
-  y.cen <- y - y.mean
-
-  ord <- apply(x.cen, 2, order)
+    x.cen <- scale(x, scale = FALSE)
+    y.cen <- y - y.mean
+    ord <- apply(x.cen, 2, order)
+  } else {
+    ord <- apply(x, 2, order) - 1
+    ranks <- apply(x, 2, rank) - 1
+    x_ord <- apply(x, 2, sort)
+  }
 
   lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
                  length = nlam)
@@ -143,23 +154,52 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
     initpars <- matrix(0, ncol = p, nrow = n)
   }
 
-  ans <- array(0, dim = c(n,p,nlam))
-  for(i in 1:nlam) {
-    #print(i)
-    ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
-                         ord, lam.seq[i], lam.seq[i]^2,
-                         max.iter = max.iter,
-                         tol = tol, initpars = initpars)
-    initpars <- ans[,, i]
+  if(is.null(initintercept) & family == "binomial") {
+    initintercept = 0;
   }
 
-  obj <- list("f_hat" = ans,
-       "x.cen" = x.cen,
-       "y.cen" = y.cen,
-       "x.mean" = x.mean,
-       "y.mean" = y.mean,
-       "ord" = ord,
-       "lam" = lam.seq)
+  ans <- array(0, dim = c(n,p,nlam))
+  ans.inters <- numeric(nlam)
+
+  for(i in 1:nlam) {
+    print(i)
+    if(family == "gaussian") {
+      ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
+                           ord, lam.seq[i], lam.seq[i]^2,
+                           max.iter = max.iter,
+                           tol = tol, initpars = initpars)
+      initpars <- ans[,, i]
+    } else if(family == "binomial") {
+      temp <- cpp_spp_one(y, x_ord, ord, ranks,
+                          lambda1 = lam.seq[i], lambda2 = lam.seq[i]^2,
+                          initpars, initintercept, n, p,
+                          max_iter = max.iter,  tol = tol,
+                          step_size = step, alpha = alpha)
+      ans[,,i] <- temp$fhat
+      ans.inters[i] <- temp$intercept
+
+    }
+
+  }
+
+  if(family == "gaussian") {
+    obj <- list("f_hat" = ans,
+                "x.cen" = x.cen,
+                "y.cen" = y.cen,
+                "x.mean" = x.mean,
+                "y.mean" = y.mean,
+                "ord" = ord,
+                "lam" = lam.seq,
+                "family" = family)
+  } else if(family == "binomial") {
+    obj <- list("f_hat" = ans,
+                "intercept" = ans.inters,
+                "x" = x,
+                "ord" = ord,
+                "lam" = lam.seq,
+                "family" = family)
+  }
+
   class(obj) <- "sobolev"
   return(obj)
 }
@@ -168,17 +208,30 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
 predict.sobolev <- function(obj, new.data) {
 
   # new.data <- matrix(rnorm(n*p), ncol = p)
+  if(obj$family == "gaussian") {
+    new.dat.cen <- scale(new.data, scale = FALSE, center = obj$x.mean)
 
-  new.dat.cen <- scale(new.data, scale = FALSE, center = obj$x.mean)
+    nlam <- length(obj$lam)
+    p <- dim(obj$f_hat)[2]
 
-  nlam <- length(obj$lam)
-  p <- dim(obj$f_hat)[2]
+    ans <- array(0, dim = c(dim(new.data), nlam) )
+    for(i in 1:nlam) {
+      for(j in 1:p) {
+        ans[,j,i] <- approx(obj$x.cen[, j], obj$f_hat[,j,i], new.dat.cen[, j],
+                            rule = 2)$y
+      }
+    }
+  } else if(obj$family == "binomial") {
 
-  ans <- array(0, dim = c(dim(new.data), nlam) )
-  for(i in 1:nlam) {
-    for(j in 1:p) {
-      ans[,j,i] <- approx(obj$x.cen[, j], obj$f_hat[,j,i], new.dat.cen[, j],
-                          rule = 2)$y
+    nlam <- length(obj$lam)
+    p <- dim(obj$f_hat)[2]
+
+    ans <- array(0, dim = c(dim(new.data), nlam) )
+    for(i in 1:nlam) {
+      for(j in 1:p) {
+        ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.dat[, j],
+                            rule = 2)$y
+      }
     }
   }
   return(ans)
