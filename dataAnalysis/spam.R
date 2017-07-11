@@ -59,8 +59,8 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   ind.min <- which.min(cv$mu)[1]
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
           cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
-  preds <- predict.spam(full.mod, newdata = x.test)$values
-  ans <- apply(( round(preds[, c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
+  preds <- predict.spam(full.mod, newdata = x.test)$probs
+  ans <- apply( (round(preds[, c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   # Then we obtain the active set indices.
