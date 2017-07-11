@@ -27,4 +27,4 @@ vignettes/*.pdf
 .Rproj.user
 
 # Data files
-dataAnalysis/data/
+#dataAnalysis/data/
