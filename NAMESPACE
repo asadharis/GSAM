@@ -9,6 +9,4 @@ export(solve.prox.tf)
 export(predict.tf)
 
 export(sobolev.norm)
-export(predict.sobolev)
-
-export(cpp_spp_one)
+S3method(predict, sobolev)

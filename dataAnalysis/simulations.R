@@ -5,14 +5,14 @@ run.sim <- function(seed = 1, nvars = 1000) {
   source("helpers.R")
   source("ssp.R")
   source("trendfiltering.R")
-  
-  dat <- get.data(nvars)
-  
+
+  load("data/BreastCancerProcessed.RData")
+  dat <- get.data()
   n <- length(dat$y)
 
   #seed <- 1
   # Obtain index for training set.
-  
+
   # We only use the seed value to split the data into training/test.
   set.seed(seed)
   train <- sample(1:n, floor(n*.75))
@@ -20,35 +20,35 @@ run.sim <- function(seed = 1, nvars = 1000) {
   x.test <- as.matrix(dat$x[-train,])
   y.train <- dat$y[train]
   y.test <- dat$y[-train]
-  
-  # Obtain the cross-validation folds, we keep the same seed for 
+
+  # Obtain the cross-validation folds, we keep the same seed for
   # this.
   folds <- cut(seq(1,nrow(x.train)), breaks=5,labels=FALSE)
-  
-  
+
+
   # SPAM RESULTS!
-  spam1 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam1 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 1)
-  spam2 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam2 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 2)
-  spam3 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam3 <- simulation.spam(x.train, y.train, x.test, y.test,
                               folds = folds, nbasis = 3)
-  spam4 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam4 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 4)
-  spam5 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam5 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 5)
-  spam6 <- simulation.spam(x.train, y.train, x.test, y.test, 
+  spam6 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 6)
-  
+
   # SSP RESULTS!
   ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds)
-  
+
   # Trend filtering results
   tf0 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=0)
   tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1)
   tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2)
-  
-  
+
+
   filename <- paste0("riboflavin_nvars", nvars)
 
   if(dir.exists(filename)) {

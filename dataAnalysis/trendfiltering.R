@@ -3,7 +3,7 @@
 #Rcpp::sourceCpp('helper_functions.cpp')
 
 # First a cross-validation for HierBasis
-cv.tf <- function(x.train, y.train, folds, nlam = 30, 
+cv.tf <- function(x.train, y.train, folds, nlam = 30,
                          max.lambda, lam.min.ratio, k = 0){
   # We assume that the y.train is coded as (-1,1) for HierBasis.
 
@@ -31,12 +31,12 @@ cv.tf <- function(x.train, y.train, folds, nlam = 30,
                    lambda.max = max.lambda,
                    lambda.min.ratio = lam.min.ratio,
                    max.iter = 3000,k=k)
-    
+
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
-    preds <- predict.tf(mod, new.data = temp.new.x)
-    preds <- apply(preds, c(1,3),sum) + mod$y.mean
-    pred.errors[i, ] <- apply((preds - temp.new.y)^2,2,mean)
+    preds <- predict.tf(mod, new.data = temp.new.x, type = "response")
+    #preds <- apply(preds, c(1,3),sum) + mod$y.mean
+    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
 
   }
 
@@ -52,24 +52,24 @@ cv.tf <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.tf <- function(x.train, y.train, x.test, y.test,
-                          folds, k = 0, ...) {
+                          folds, k = 0, lambda.max = 1, lambda.min.ratio = 1e-3, ...) {
   require(uniSolve)
   p <- ncol(x.train)
-  full.mod <- tf.norm(y.train, x.train, max.iter = 3000, lambda.max = 1,
-                      lambda.min.ratio = 1e-3, nlam = 50, k = k) 
+  full.mod <- tf.norm(y.train, x.train, max.iter = 3000, lambda.max = lambda.max,
+                      lambda.min.ratio = lambda.min.ratio, nlam = 50, k = k)
 
 
   cv <- cv.tf(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
-               nlam = length(full.mod$lam), lam.min.ratio = 1e-3,
+               nlam = length(full.mod$lam), lam.min.ratio = lambda.min.ratio,
                k=k)
 
   # Obtain the minimum CV and one SE lambda
   ind.min <- which.min(cv$mu)[1]
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
                      cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
-  preds <- predict(full.mod, new.data = x.test)
-  preds.fhat <- apply(preds, c(1,3),sum) + full.mod$y.mean
-  ans <- apply((preds.fhat[,c(ind.min, ind.1se)] - y.test)^2, 2, mean)
+  preds <- predict(full.mod, new.data = x.test, type = "response")
+  #preds.fhat <- apply(round(preds), c(1,3),sum) + full.mod$y.mean
+  ans <- apply(( round(preds.fhat[,c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   betas <- full.mod$f_hat[,,c(ind.min, ind.1se)]

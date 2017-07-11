@@ -26,12 +26,12 @@ cv.spam <- function(x.train, y.train, folds, lam.seq, ...){
     x.sd <- attributes(temp.x)$'scaled:scale'
 
     #mod <- samQL(temp.x, temp.y, lambda = lam.seq, p=3)
-    mod <- samQL(temp.x, temp.y, lambda = lam.seq, ...)
+    mod <- samLL(temp.x, temp.y, lambda = lam.seq, ...)
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
-    preds <- predict.spam(mod, newdata = temp.new.x)$values
-    pred.errors[i, ] <- apply((preds - temp.new.y)^2,2,mean)
+    preds <- predict.spam(mod, newdata = temp.new.x)$probs
+    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
   }
 
   mu.err <- apply(pred.errors, 2, mean)
@@ -44,12 +44,12 @@ cv.spam <- function(x.train, y.train, folds, lam.seq, ...){
 }
 
 simulation.spam <- function(x.train, y.train, x.test, y.test,
-                            folds, nbasis = 3, ...) {
+                            folds, nbasis = 3, lambda.min.ratio = 1e-4, ...) {
   #require(SAM)
   p <- ncol(x.train)
   J <- nbasis
-  full.mod <- samQL(x.train, y.train,
-                    nlambda = 50, lambda.min.ratio = 1e-4,
+  full.mod <- samLL(x.train, y.train,
+                    nlambda = 50, lambda.min.ratio = lambda.min.ratio,
                     p = nbasis, ...)
 
   cv <- cv.spam(x.train, y.train, folds = folds,
@@ -60,7 +60,7 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
           cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
   preds <- predict.spam(full.mod, newdata = x.test)$values
-  ans <- apply((preds[, c(ind.min, ind.1se)] - y.test)^2, 2, mean)
+  ans <- apply(( round(preds[, c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   # Then we obtain the active set indices.
@@ -122,14 +122,14 @@ spam.est.func = function(fit.spam, X, index.lam) {
   index <- index.lam
   newdata <- X
 
-  
+
   #fit.spam$w = fit.spam$w[-nrow(fit.spam$w),]
   # d is number of covariates, fit.spam$p is number of basis functions
   d = ncol(X); n = nrow(X)
   nt = nrow(X)
   X.min.rep = matrix(rep(fit.spam$X.min,nt),nrow=nt,byrow=T)
   X.ran.rep = matrix(rep(fit.spam$X.ran,nt),nrow=nt,byrow=T)
-  
+
   newdata = (newdata - X.min.rep)/X.ran.rep
   newdata = pmax(newdata, 0)
   newdata = pmin(newdata, 1)
@@ -137,14 +137,15 @@ spam.est.func = function(fit.spam, X, index.lam) {
   ans <- matrix(0, nrow = n, ncol = d)
   for (j in 1:d) {
     tmp = (j - 1) * fit.spam$p + c(1:fit.spam$p)
-    tx = ns(newdata[, j], df = fit.spam$p, knots = fit.spam$nkots[,j], 
+    tx = ns(newdata[, j], df = fit.spam$p, knots = fit.spam$nkots[,j],
                    Boundary.knots = fit.spam$Boundary.knots[, j])
     ans[,j] <- tx %*% fit.spam$w[tmp, index]
   }
   return(scale(ans, scale = FALSE))
 }
 
-predict.spam = function (object, newdata) {
+predict.spam = function (object, newdata, thol = 0.5) {
+
   gcinfo(FALSE)
   out = list()
   nt = nrow(newdata)
@@ -158,10 +159,12 @@ predict.spam = function (object, newdata) {
   Zt = matrix(0, nt, m)
   for (j in 1:d) {
     tmp = (j - 1) * object$p + c(1:object$p)
-    Zt[, tmp] = ns(newdata[, j], df = object$p, knots = object$nkots[,j], 
+    Zt[, tmp] = ns(newdata[, j], df = object$p, knots = object$nkots[,j],
                    Boundary.knots = object$Boundary.knots[, j])
   }
-  out$values = cbind(Zt, rep(1, nt)) %*% rbind(object$w, object$intercept)
+  out$probs = exp(cbind(Zt, rep(1, nt)) %*% object$w)
+  out$probs = out$prob/(1 + out$prob)
+  out$labels = sign(out$values > thol)
   rm(Zt, newdata)
   return(out)
 }

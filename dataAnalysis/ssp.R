@@ -3,7 +3,7 @@
 #Rcpp::sourceCpp('helper_functions.cpp')
 
 # First a cross-validation for HierBasis
-cv.ssp <- function(x.train, y.train, folds, nlam = 30, 
+cv.ssp <- function(x.train, y.train, folds, nlam = 30,
                          max.lambda, lam.min.ratio){
   # We assume that the y.train is coded as (-1,1) for HierBasis.
 
@@ -30,13 +30,13 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
     mod <- sobolev.norm(temp.y, temp.x, nlam = nlam,
                         lambda.max = max.lambda,
                         lambda.min.ratio = lam.min.ratio,
-                        max.iter = 3000)
-    
+                        max.iter = 3000, family = "binomial")
+
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
-    preds <- predict.sobolev(mod, new.data = temp.new.x)
-    preds <- apply(preds, c(1,3),sum) + mod$y.mean
-    pred.errors[i, ] <- apply((preds - temp.new.y)^2,2,mean)
+    preds <- predict(mod, new.data = temp.new.x, type = "response")
+    #preds <- apply(preds, c(1,3),sum) + mod$y.mean
+    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
 
   }
 
@@ -52,23 +52,23 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.ssp <- function(x.train, y.train, x.test, y.test,
-                          folds, ...) {
+                          folds, max.lambda, lam.min.ratio, ...) {
   require(uniSolve)
   p <- ncol(x.train)
-  full.mod <- sobolev.norm(y.train, x.train, lambda.max = 1,
-                           lambda.min.ratio = 1e-3,max.iter = 3000) 
+  full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
+                           lambda.min.ratio = lam.min.ratio, max.iter = 3000)
 
 
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
-                     nlam = length(full.mod$lam), lam.min.ratio = 1e-3)
+                     nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio)
 
   # Obtain the minimum CV and one SE lambda
   ind.min <- which.min(cv$mu)[1]
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
                      cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
-  preds <- predict(full.mod, new.data = x.test)
-  preds.fhat <- apply(preds, c(1,3),sum) + full.mod$y.mean
-  ans <- apply((preds.fhat[,c(ind.min, ind.1se)] - y.test)^2, 2, mean)
+
+  preds.fhat <- predict(full.mod, new.data = x.test, type = "response")
+  ans <- apply((round(preds.fhat[,c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   betas <- full.mod$f_hat[,,c(ind.min, ind.1se)]

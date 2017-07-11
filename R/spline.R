@@ -103,7 +103,7 @@ ssp_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2, max.iter = 100,
 
 sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
                          initpars = NULL, initintercept = 0,
-                         lambda.max = 3,
+                         lambda.max = 1,
                          lambda.min.ratio = 1e-3,
                          nlam = 50, step = 1, alpha = 0.5) {
   # This function solves the sobolev norm prooblem
@@ -205,7 +205,7 @@ sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
 }
 
 
-predict.sobolev <- function(obj, new.data) {
+predict.sobolev <- function(obj, new.data, type = "function") {
 
   # new.data <- matrix(rnorm(n*p), ncol = p)
   if(obj$family == "gaussian") {
@@ -229,11 +229,24 @@ predict.sobolev <- function(obj, new.data) {
     ans <- array(0, dim = c(dim(new.data), nlam) )
     for(i in 1:nlam) {
       for(j in 1:p) {
-        ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.dat[, j],
+        ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.data[, j],
                             rule = 2)$y
       }
     }
   }
-  return(ans)
+  if(type == "function") {
+    return(ans)
+  } else {
+    if(obj$family == "gaussian"){
+      return(apply(ans, c(1,3),sum) + obj$y.mean)
+    } else {
+      temp <- apply(ans, c(1,3),sum)
+      temp <- t(apply(temp, 1, "+", obj$intercept))
+
+      return(1/(1 + exp(-temp)))
+
+    }
+  }
+
 }
 

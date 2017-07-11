@@ -27,6 +27,12 @@ x_mat_ord <- apply(x_mat, 2, function(vec){
 
 p <- ncol(x_mat)
 
+
+ans <- sobolev.norm(y,x_mat, lambda.max = 1e-3, lambda.min.ratio = 1e-6)
+
+
+pred1 <- predict(ans, new.dat = x_mat, type = "response")
+
 ans <- cpp_spp_one(y, x_mat_ord,
             ord_mat, rank_mat, lambda1 = 1.1e-3, lambda2 = (1.1e-3)^2,
             init_fhat = matrix(0, ncol = p, nrow = n), init_intercept = 0,
