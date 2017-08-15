@@ -3,10 +3,12 @@ useDynLib(uniSolve)
 importFrom(Rcpp, evalCpp)
 
 export(tf.norm)
-export(tf_one)
+export(tf_logistic_one)
 export(solve.prox.tf)
 
 export(predict.tf)
 
 export(sobolev.norm)
 S3method(predict, sobolev)
+
+export(cpp_spline)

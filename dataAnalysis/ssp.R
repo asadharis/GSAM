@@ -56,7 +56,8 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
   require(uniSolve)
   p <- ncol(x.train)
   full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
-                           lambda.min.ratio = lam.min.ratio, max.iter = 3000)
+                           lambda.min.ratio = lam.min.ratio, max.iter = 3000,
+                           tol = 1e-4)
 
 
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],

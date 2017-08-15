@@ -177,6 +177,8 @@ sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
                           step_size = step, alpha = alpha)
       ans[,,i] <- temp$fhat
       ans.inters[i] <- temp$intercept
+      initpars <- temp$fhat
+      initintercept <- temp$intercept
 
     }
 

@@ -15,7 +15,7 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
 
   n <- length(y.ord)
   f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-              lambda = n*lambda2)$beta[, 1]
+              lambda = n*lambda2, thinning = TRUE)$beta[, 1]
 
   if(length(f_hat) != n){
     # Find how many values are missing
@@ -29,7 +29,9 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
   #f_hat2 <- genlasso::trendfilter(y = y.ord, pos = x.ord, ord = 0)
 
   # We return the desired value
-  max((1 - lambda1/mean(f_hat^2)), 0)*f_hat
+  #max(1 - lambda1/sqrt(mean(f_hat^2)), 0)*f_hat
+  f_hat
+
 }
 
 
@@ -47,6 +49,39 @@ GetLogistic_tf <- function(y, f_hat, intercept) {
   lin_part <- apply(f_hat, 1, sum) + intercept
 
   mean(log(1 + exp(-y * lin_part)))
+}
+
+gen_dx1 <- function(n) {
+  temp <- diag(rep(-1,n-1))
+  temp <- cbind(temp, rep(0,n-1))
+  diag(temp[,-1]) <- 1
+  temp
+}
+
+gen_dx2 <- function(n,x){
+  dx1 <- gen_dx1(n)
+  dx1[-(n-1),-n] %*% diag(1/diff(sort(x))) %*% dx1
+}
+
+gen_dx3 <- function(n,x){
+  dx1 <- gen_dx1(n)
+  dx1_t <- dx1[-((n-2):(n-1)),-((n-1):n)]
+  dx2 <- gen_dx2(n,x)
+  dx1_t %*% diag(2/diff(sort(x),2)) %*% dx2
+}
+
+gen_d <- function(x,n,k=0){
+  if(k==0){
+    gen_dx1(n)
+  } else if(k==1) {
+    gen_dx2(n,x)
+  } else if(k==2) {
+    gen_dx3(n,x)
+  }
+}
+
+GetPenalty_tf <- function(f_hat, matD) {
+  sum(apply((matD %*% f_hat)^2,2,sum))
 }
 
 GetVectorR_tf <- function(y, f_hat, intercept) {
@@ -79,17 +114,15 @@ GetZ_tf <- function(f_hat, intercept, vector_r, n, p, step_size,
 
   intercept_new <- intercept - (step_size * sum(vector_r))
 
-  inter_step <- f_hat
-  inter_step <- apply(inter_step, 2, "-", step_size * vector_r)
-
+  #inter_step <- f_hat
+  inter_step <- apply(f_hat, 2, "-", step_size * vector_r)
   ans <- matrix(0, nrow = n, ncol = p)
   for(i in 1:p) {
-    temp_y <- inter_step[ord_mat[,i] ,i]
+    temp_y <- inter_step[ord_mat[,i], i]
 
-    ans[x.ord[, i], i] <-  solve.prox.tf(temp_y, x.ord[,i],
-                               k = k, lambda1, lambda2);
-
-
+    ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y, x_mat_ord[,i],
+                               k = k, lambda1 = lambda1*step_size/n,
+                              lambda2 = lambda2*step_size/n);
   }
 
   list(intercept_new, ans)
@@ -130,7 +163,7 @@ Get_f_hat_Z_X_tf <- function(z, xk, vector_r_xk, f_xk, step_size, p) {
   # Obtain the norm term.
   norm_term <- (1/(2*step_size)) * sum((z[[2]] - xk[[2]])^2);
 
-  ans + cross_prod_term + norm_term;
+  return(ans + cross_prod_term + norm_term)
 }
 
 LineSearch_tf <- function(alpha, step_size, y, f_hat, intercept,
@@ -148,6 +181,9 @@ LineSearch_tf <- function(alpha, step_size, y, f_hat, intercept,
   temp_z <- vector("list", 2)
   convg <- FALSE
 
+  # temp_z <- GetZ_tf(f_hat, intercept, r_k, n, p, step_size,
+  #                   x_mat_ord, ord_mat, k,lambda1, lambda2)
+  # convg <- TRUE
   while(!convg) {
     temp_z <- GetZ_tf(f_hat, intercept, r_k, n, p, step_size,
                       x_mat_ord, ord_mat, k,lambda1, lambda2)
@@ -160,6 +196,7 @@ LineSearch_tf <- function(alpha, step_size, y, f_hat, intercept,
       step_size = alpha * step_size;
     }
   }
+  cat("Step size: ", step_size,"\n")
   temp_z
 }
 
@@ -173,13 +210,14 @@ LineSearch_tf <- function(alpha, step_size, y, f_hat, intercept,
 
 
 tf_logistic_one <- function(y, x_ord, ord, lambda1, lambda2,
-                            init_fhat, init_intercept, n, p,
+                            init_fhat, init_intercept, k=0, n, p,
                             max_iter = 100, tol = 1e-4,
                             step_size = 1, alpha = 0.5) {
 
   counter <- 1
   converged <- FALSE
 
+  matD <- gen_d(x_ord,n,k=k)
   old_ans <- vector("list", 2);
   old_ans[[1]] <- init_intercept
   old_ans[[2]] <- init_fhat
@@ -189,10 +227,19 @@ tf_logistic_one <- function(y, x_ord, ord, lambda1, lambda2,
   while(counter < max_iter & !converged) {
     new_ans <- LineSearch_tf(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
                              n, p, x_ord, ord, k, lambda1, lambda2)
+    # par(ask = TRUE)
+    # myte <- old_ans[[2]]
+    # plot(x_ord[,1], myte[ord[,1]])
 
-    temp_res <- sqrt(sum((new_ans[[2]] - new_ans[[2]])^2)/(n*p)) +
-      abs(old_ans[[1]] - old_ans[[2]])
+    temp2 <- GetLogistic_tf(y,new_ans[[2]],new_ans[[1]]) + lambda2*GetPenalty_tf(new_ans[[2]], matD)
+
+    cat("Objective function is: ", temp2, "\n")
+
+    temp_res <- sqrt(sum((new_ans[[2]] - old_ans[[2]])^2)/(n*p)) +
+      abs(new_ans[[1]] - old_ans[[1]])
+
     #Rcout << "Criteria: " << temp_res << "\n";
+    #cat("criteria is: ", (temp_res), ". Counter: ", counter, "\n")
     if(temp_res <= tol) {
       converged <- TRUE
     } else {
@@ -201,7 +248,7 @@ tf_logistic_one <- function(y, x_ord, ord, lambda1, lambda2,
     }
   }
 
-  List("fhat" = new_ans[[2]],
+  list("fhat" = new_ans[[2]],
        "intercept" = new_ans[[1]],
        "conv" = converged)
 }
@@ -277,10 +324,7 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   # k <- 0
 
 
-  if(family == "binomial"){
-    y[y==0] <- -1
-  }
-
+  x <- matrix(x)
   n <- length(y)
   p <- ncol(x)
 
@@ -293,8 +337,8 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
     y.cen <- y - y.mean
     ord <- apply(x.cen, 2, order)
   } else {
-    ord <- apply(x, 2, order) - 1
-    ranks <- apply(x, 2, rank) - 1
+    ord <- apply(x, 2, order)
+    ranks <- apply(x, 2, rank)
     x_ord <- apply(x, 2, sort)
   }
 
@@ -307,14 +351,20 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
   if(is.null(initintercept) & family == "binomial") {
-    initintercept = 0;
+    mp <- mean(y)
+    initintercept <- log(mp/(1-mp))
+  }
+
+
+  if(family == "binomial"){
+    y[y==0] <- -1
   }
 
   ans <- array(0, dim = c(n,p,nlam))
   ans.inters <- numeric(nlam)
 
   for(i in 1:nlam) {
-    #print(i)
+    print(i)
     if(family == "gaussian") {
       ans[,, i] <- tf_one(y.cen, y.mean, x.cen, x.mean,
                           ord, k= k, lam.seq[i], lam.seq[i]^2,
@@ -325,7 +375,10 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
       temp <- tf_logistic_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
                               initpars, initintercept, n, p,
                               max_iter = max.iter, tol = tol,
-                              step_size = step, alpha = alpha)
+                              step_size = step, alpha = alpha, k=k)
+      initpars <- temp$fhat
+      initintercept <- temp$intercept
+
       ans[, , i] <- temp$fhat
       ans.inters[i] <- temp$intercept
 

@@ -6,11 +6,11 @@ run.sim <- function(seed = 1, nvars = 1000) {
   source("ssp.R")
   source("trendfiltering.R")
 
-  load("data/BreastCancerProcessed.RData")
-  dat <- get.data()
+  load("data/LUNGdat.RData")
+  #dat <- get.data()
   n <- length(dat$y)
 
-  #seed <- 1
+  seed <- 1
   # Obtain index for training set.
 
   # We only use the seed value to split the data into training/test.
@@ -41,11 +41,14 @@ run.sim <- function(seed = 1, nvars = 1000) {
                            folds = folds, nbasis = 6)
 
   # SSP RESULTS!
-  ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds)
+  ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds,
+                        max.lambda = 1, lam.min.ratio = 1e-4)
 
   # Trend filtering results
   tf0 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=0)
+
   tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1)
+
   tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2)
 
 

@@ -52,11 +52,12 @@ cv.tf <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.tf <- function(x.train, y.train, x.test, y.test,
-                          folds, k = 0, lambda.max = 1, lambda.min.ratio = 1e-3, ...) {
+                          folds, k = 1, lambda.max = 1, lambda.min.ratio = 1e-3, ...) {
   require(uniSolve)
   p <- ncol(x.train)
-  full.mod <- tf.norm(y.train, x.train, max.iter = 3000, lambda.max = lambda.max,
-                      lambda.min.ratio = lambda.min.ratio, nlam = 50, k = k)
+  full.mod <- tf.norm(y.train, x.train, max.iter = 3000, lambda.max = 1e-4,
+                      lambda.min.ratio = 1e-3, nlam = 2, k = k,
+                      tol = 1e-4)
 
 
   cv <- cv.tf(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],

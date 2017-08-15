@@ -110,3 +110,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+
+static const R_CallMethodDef CallEntries[] = {
+    {"uniSolve_cpp_spline", (DL_FUNC) &uniSolve_cpp_spline, 5},
+    {"uniSolve_cpp_spline_raw", (DL_FUNC) &uniSolve_cpp_spline_raw, 5},
+    {"uniSolve_cpp_temp_func", (DL_FUNC) &uniSolve_cpp_temp_func, 6},
+    {"uniSolve_cpp_uniroot", (DL_FUNC) &uniSolve_cpp_uniroot, 8},
+    {"uniSolve_cpp_solve_prox", (DL_FUNC) &uniSolve_cpp_solve_prox, 6},
+    {"uniSolve_cpp_spp_one", (DL_FUNC) &uniSolve_cpp_spp_one, 14},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_uniSolve(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}
