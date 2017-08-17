@@ -1,245 +1,242 @@
-# IN this file we have the main functions for the trend-filtering additive models
-# We use the c implementation of the package glmgen.
-
 library(glmgen)
 
-# Solves the proximal problem for the sobolev norm
+###############################################################
+#
+# This file consists of a proximal gradient descent algorithm
+# implementation for the trend-filtering problem.
+#
+###############################################################
+
+# A function for the proximal operator which solves:
+#
+# minimize (1/2n) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda1)*||f|| +(lambda2)*TV(f)
+#
+# where TV(f) is the trend filtering penalty.
+# Args:
+#   y.ord: The response vector, ordered according to the ordering of x.
+#   x.ord: The sorted covariate vector.
+#   k: The order of the trend-filtering. We consider 0,1,2
+#   lambda1,lambda2: The two tuning parameters.
+
 solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
-  # We now want to solve the optimization problem.
-  # minimize (1/2n) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda1)*||f|| +(lambda2)*TV(f)
-  #
-  # To do this we first solve the problem
-  #   f^hat_lambda2 <- argmin (1/2n) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda2)*TV(f)
+
+  # We first solve the problem
+  #      f^hat_lambda2 <- argmin (1/2n) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda2)*TV(f)
+  # followed by a soft thresholding step.
 
   require(glmgen)
-
   n <- length(y.ord)
-  f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-              lambda = n*lambda2, thinning = TRUE)$beta[, 1]
+  #plot(x.ord, y.ord, ylim = c(-1,1))
 
-  if(length(f_hat) != n){
-    # Find how many values are missing
-    n.res <- n - length(f_hat)
-    # Find where in x.ord we have values too close to each other.
-    # Find the smallest 'n.res' values
-    ind.s <- order(diff(x.ord))[1:n.res]
-    f_hat <- R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
+  # We use n*lambda2 since the default function solves
+  #     argmin (1/2) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda2)*TV(f)
+  # whereas we would like to have (1/2n) instead of (1/2).
+  if(k==2) {
+    f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
+                         lambda = n*lambda2, thinning = FALSE,
+                         control = trendfilter.control.list(obj_tol = 1e-12,
+                                                            max_iter = 600))$beta[, 1]
+
+  } else {
+    f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
+                         lambda = n*lambda2, thinning = FALSE)$beta[, 1]
+
   }
 
-  #f_hat2 <- genlasso::trendfilter(y = y.ord, pos = x.ord, ord = 0)
-
-  # We return the desired value
-  #max(1 - lambda1/sqrt(mean(f_hat^2)), 0)*f_hat
-  f_hat
-
+  # We return the desired value after soft-thresolding.
+  max(1 - lambda1/sqrt(mean(f_hat^2)), 0)*f_hat
+  #f_hat
 }
 
 
-#########################################################################
-#########################################################################
-#########################################################################
-############### Begin work on prox grad descent #########################
-#########################################################################
-#########################################################################
-#########################################################################
-
-GetLogistic_tf <- function(y, f_hat, intercept) {
-
-  # For the case of logistic loss, we assume that y_i \in {-1,1}
-  lin_part <- apply(f_hat, 1, sum) + intercept
-
-  mean(log(1 + exp(-y * lin_part)))
+# This function calculates the loss function or the logistic loss.
+#
+# Args:
+#   y: The response vector, assumed to take values {-1, 1}
+#   f_hat: A n*p matrix where each column is the fitted component function evaluated at the covariate points.
+#   intercept: The intercept in of the model.
+GetLogistic <- function(y, f_hat, intercept) {
+  linear_part <- apply(f_hat, 1, sum) + intercept
+  mean(log(1 + exp(-y * linear_part)))
 }
 
-gen_dx1 <- function(n) {
-  temp <- diag(rep(-1,n-1))
-  temp <- cbind(temp, rep(0,n-1))
-  diag(temp[,-1]) <- 1
-  temp
+GetLS <- function(y, f_hat, intercept) {
+  linear_part <- apply(f_hat, 1, sum) + intercept
+  mean((y - linear_part)^2)/2
 }
 
-gen_dx2 <- function(n,x){
-  dx1 <- gen_dx1(n)
-  dx1[-(n-1),-n] %*% diag(1/diff(sort(x))) %*% dx1
-}
-
-gen_dx3 <- function(n,x){
-  dx1 <- gen_dx1(n)
-  dx1_t <- dx1[-((n-2):(n-1)),-((n-1):n)]
-  dx2 <- gen_dx2(n,x)
-  dx1_t %*% diag(2/diff(sort(x),2)) %*% dx2
-}
-
-gen_d <- function(x,n,k=0){
-  if(k==0){
-    gen_dx1(n)
-  } else if(k==1) {
-    gen_dx2(n,x)
-  } else if(k==2) {
-    gen_dx3(n,x)
-  }
-}
-
-GetPenalty_tf <- function(f_hat, matD) {
-  sum(apply((matD %*% f_hat)^2,2,sum))
-}
-
-GetVectorR_tf <- function(y, f_hat, intercept) {
+# This function calculates the n-vector 'r', which consists of all derivative information.
+# I.e. r_i = -(y_i/n) * {1 + exp[beta + sum(j=1,p) f_j(x_ij) ]}^-1.
+# Or more generally we have that
+#   r_i = -(1/n) * l^dot (beta_0 + \sum(j=1,p) f_j(x_ij))
+#
+# Args:
+#   y: The response vector y. Assumed to be in {-1,1}
+#   f_hat: The n*p matrix of evaluate function values, as in GetLogistic().
+#   intercept: The intercept term.
+GetVectorR <- function(y, f_hat, intercept) {
   n <- length(y)
 
-  # With out notation we calculate the vector r,
-  # where r_i is given by
-  #  r_i = -(1/n) * l^dot (beta_0 + \sum_j f_ji)
-  #
-  # For the case of logistic loss, we assume that y_i \in {-1,1}
-
   lin_part <- apply(f_hat, 1, sum) + intercept
-  temp <- (-1 * y)/(1 + exp(y * lin_part))
-  temp/n
+  (-y/n)/(1 + exp(y * lin_part))
 }
+GetVectorR2 <- function(y, f_hat, intercept){
+  linear_part <- apply(f_hat, 1, sum) + intercept
+  n <- length(y)
 
+  -1*(y - linear_part)/n
+}
+# This function evaluates the next iteration
+# for a given set of parameter values and fixed step size.
+# In out notation this corresponds to z, where
+#   z <- prox_(t g) (theta^k - t \nabla f)
+# where theta^k is the current parameter value, t is the step size,
+# f and g are the differentiable and non-differentiable parts of the objective
+#     f + g
+#
+# Args:
+#   f_hat, intercept: Values of current iterate, theta^k above.
+#   step_size: The step size, written as 't' above.
+#   x_mat_ord: The n*p desgin matrix with all columns sorted.
+#   ord_mat: An n*p matrix for the ordering of the original (unsorted) design matrix.
+#   k: The order of the trend-filtering that we will use.
+#   lambda1, lambda2: The tuning parameters.
+#   y: The response vector to evaluate the derivate.
+GetZ <- function(f_hat, intercept, step_size,
+                 x_mat_ord, ord_mat, k,
+                 lambda1, lambda2, y,
+                 family = "gaussian") {
 
-GetZ_tf <- function(f_hat, intercept, vector_r, n, p, step_size,
-                    x_mat_ord, ord_mat, k,lambda1, lambda2) {
+  n <- nrow(f_hat)
+  p <- ncol(f_hat)
+  if(family == "gaussian") {
+    ############## Continuous #####################
+    vector_r <- GetVectorR2(y, f_hat, intercept)
+    ############## Continuous #####################
 
-  # In notation of our algorithm
-  # z is given by prox(x_k - t*nabla(f(x_k)), tg)
-  # where the objective is (f + g), t is the step_size and x_k is the k^th
-  # iteration.
-  #
-  # Essentially, this is one step of the proximal gradient descent algorithm for
-  # a fixed step size t.
-
-  # First we update the intercept.
+  } else if(family == "binomial") {
+    ############## Logistic #####################
+    vector_r <- GetVectorR(y, f_hat, intercept)
+    ############## Logistic #####################
+  }
 
   intercept_new <- intercept - (step_size * sum(vector_r))
 
-  #inter_step <- f_hat
   inter_step <- apply(f_hat, 2, "-", step_size * vector_r)
+
   ans <- matrix(0, nrow = n, ncol = p)
   for(i in 1:p) {
-    temp_y <- inter_step[ord_mat[,i], i]
+    temp_y <- inter_step[ord_mat[, i], i]
 
-    ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y, x_mat_ord[,i],
-                               k = k, lambda1 = lambda1*step_size/n,
-                              lambda2 = lambda2*step_size/n);
+    ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y - mean(temp_y),
+                                           x_mat_ord[, i],
+                                           k = k, lambda1 = lambda1*step_size/n,
+                                           lambda2 = lambda2*step_size/n);
   }
-
   list(intercept_new, ans)
 }
 
+# This function performs the line search algorithm and returns the last
+# update of the parameters of the algorithm.
+#
+# Args:
+#   alpha: The parameter for the line search in (0, 1).
+#   step_size: An initial value for the step size. Common value is 1.
+#   For other parameters see function: 'GetZ()'
+LineSearch <- function(alpha, step_size, y, f_hat, intercept,
+                       x_mat_ord, ord_mat, k, lambda1, lambda2,
+                       family = "gaussian") {
 
-Get_f_Z_tf <- function(z, y) {
-  # This function simply calculates f(z),
-  # where z is one step of the proximal grad descent as
-  # in the previous function and
-  # f() is just the logistic loss function.
 
-  # This function is simply a wrapper to make writing the line search
-  # algorithm cleaner.
-  GetLogistic_tf(y, z[[2]], z[[1]])
-}
+  if(family == "binomial") {
+    ############## Logistic #####################
+    loss_val <- GetLogistic(y, f_hat, intercept)
+    vector_r <- GetVectorR(y, f_hat, intercept)
+    ############## Logistic #####################
 
-Get_f_hat_Z_X_tf <- function(z, xk, vector_r_xk, f_xk, step_size, p) {
-  # Again, only a wrapper to make the line search neater.
-  # Args:
-  #    z: A field of the one step update of prox grad. Element 1 is intercept and
-  #       two is the rest, i.e. f^hats.
-  #    xk: The current iteration k, again a field with element 1 k^th iterate of intercept
-  #        and element 2 the k^th iterate of the f_js.
-  #    vector_r_xk: The vector R, as outputed by function 'GetVectorR' at point xk.
-  #    f_xk: The loss function evaluated at point xk
-  #    step_size: The value of step size, t.
-  #    p: The number of components, used for defining loop.
+  } else if(family == "gaussian") {
+    ############## Continuous #####################
+    loss_val <- GetLS(y, f_hat, intercept)
+    vector_r <- GetVectorR2(y, f_hat, intercept)
+    ############## Continuous #####################
 
-  # Initialize with f_xk and the terms for the intercept.
-  ans <- f_xk +
-    sum(vector_r_xk) * (z[[1]] - xk[[1]]) +
-    (1/(2*step_size)) * ((z[[1]] - xk[[1]])^2)
+  }
 
-  # Obtain the cross product term.
-  cross_prod_term <- sum(vector_r_xk %*% (z[[2]] - xk[[2]]));
 
-  # Obtain the norm term.
-  norm_term <- (1/(2*step_size)) * sum((z[[2]] - xk[[2]])^2);
-
-  return(ans + cross_prod_term + norm_term)
-}
-
-LineSearch_tf <- function(alpha, step_size, y, f_hat, intercept,
-                       n, p, x_mat_ord, ord_mat, k, lambda1, lambda2) {
-
-  r_k <-  GetVectorR_tf(y, f_hat, intercept)
-  f_xk <- GetLogistic_tf(y, f_hat, intercept);
-
-  # Get all the things together for iterate k, in a field.
-  xk <- vector("list", 2)
-  xk[[1]] <- intercept
-  xk[[2]] <- f_hat
-
-  # Initialize empty things for the algorithm.
-  temp_z <- vector("list", 2)
   convg <- FALSE
-
-  # temp_z <- GetZ_tf(f_hat, intercept, r_k, n, p, step_size,
-  #                   x_mat_ord, ord_mat, k,lambda1, lambda2)
-  # convg <- TRUE
   while(!convg) {
-    temp_z <- GetZ_tf(f_hat, intercept, r_k, n, p, step_size,
-                      x_mat_ord, ord_mat, k,lambda1, lambda2)
-    temp_rhs <- Get_f_hat_Z_X_tf(temp_z, xk, r_k, f_xk, step_size, p);
-    temp_lhs <-  Get_f_Z_tf(temp_z, y) ;
+    # Obtain next iteration given step size.
+    temp_z <- GetZ(f_hat, intercept, step_size,
+                   x_mat_ord, ord_mat, k,
+                   lambda1, lambda2, y, family = family)
 
-    if(temp_lhs <= temp_rhs) {
-      convg = TRUE
+    if(family == "binomial") {
+      # Generate the values needed for stopping criteria.
+      ############## Logistic #####################
+      lhs <- GetLogistic(y, temp_z[[2]], temp_z[[1]])
+      ############## Logistic #####################
+
+    } else if(family == "gaussian") {
+      ############## Continuous #####################
+      lhs <- GetLS(y, temp_z[[2]], temp_z[[1]])
+      ############## Continuous #####################
+
+    }
+    rhs <- loss_val + sum(vector_r)*(temp_z[[1]] - intercept) +
+      sum(vector_r %*% (temp_z[[2]] - f_hat)) +
+      (1/(2*step_size)) * (sum((temp_z[[2]] - f_hat)^2) + (temp_z[[1]] - intercept)^2)
+
+    # Check for convergence.
+    if(lhs <= rhs) {
+      convg <- TRUE
     } else {
-      step_size = alpha * step_size;
+      step_size <- alpha * step_size
     }
   }
-  cat("Step size: ", step_size,"\n")
-  temp_z
+
+
+  # Return the next iterate based on the selected step size.
+  return(temp_z)
 }
 
-#########################################################################
-#########################################################################
-#########################################################################
-################# End work on prox grad descent #########################
-#########################################################################
-#########################################################################
-#########################################################################
-
-
-tf_logistic_one <- function(y, x_ord, ord, lambda1, lambda2,
-                            init_fhat, init_intercept, k=0, n, p,
-                            max_iter = 100, tol = 1e-4,
-                            step_size = 1, alpha = 0.5) {
+# This function performs sparse additive trend-filtering for one
+# value of the tuning parameters lambda1, lambda2.
+# Args:
+#   y: Response vector of size n.
+#   x_ord: The ordered/sorted design matrix of size n*p.
+#   ord: A n*p matrix of the ordering for the covariate matrix x.
+#   lambda1, lambda2: Tuning parameters.
+#   init_fhat: Initial value of the estimated functions.
+#   init_intercept: Initial value for the intercept.
+#   k: order of the TF.
+#   max_iter: Maximum iterations of the algorithm.
+#   tol: Tolerance for stopping criteria.
+#   step_size: Initial step size for the line search algorithm.
+#   alpha: Tuning parameter for the line search algorithm.
+tf_one <- function(y, x_ord, ord, lambda1, lambda2,
+                   init_fhat, init_intercept, k=0,
+                   max_iter = 100, tol = 1e-4,
+                   step_size = 1, alpha = 0.5,
+                   family = "gaussian") {
 
   counter <- 1
   converged <- FALSE
+  n <- nrow(x_ord)
+  p <- ncol(x_ord)
 
-  matD <- gen_d(x_ord,n,k=k)
+  # Initialize parameters.
   old_ans <- vector("list", 2);
   old_ans[[1]] <- init_intercept
   old_ans[[2]] <- init_fhat
 
-  new_ans <- vector("list", 2);
 
   while(counter < max_iter & !converged) {
-    new_ans <- LineSearch_tf(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
-                             n, p, x_ord, ord, k, lambda1, lambda2)
-    # par(ask = TRUE)
-    # myte <- old_ans[[2]]
-    # plot(x_ord[,1], myte[ord[,1]])
+    new_ans <- LineSearch(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
+                          x_ord, ord, k, lambda1, lambda2, family)
 
-    temp2 <- GetLogistic_tf(y,new_ans[[2]],new_ans[[1]]) + lambda2*GetPenalty_tf(new_ans[[2]], matD)
+    temp_res <- sum((new_ans[[2]] - old_ans[[2]])^2)/(n*p) +
+      (new_ans[[1]] - old_ans[[1]])^2
 
-    cat("Objective function is: ", temp2, "\n")
-
-    temp_res <- sqrt(sum((new_ans[[2]] - old_ans[[2]])^2)/(n*p)) +
-      abs(new_ans[[1]] - old_ans[[1]])
-
-    #Rcout << "Criteria: " << temp_res << "\n";
-    #cat("criteria is: ", (temp_res), ". Counter: ", counter, "\n")
     if(temp_res <= tol) {
       converged <- TRUE
     } else {
@@ -253,59 +250,12 @@ tf_logistic_one <- function(y, x_ord, ord, lambda1, lambda2,
        "conv" = converged)
 }
 
-tf_one <- function(y, y.mean, x, x.mean, ord, k = 0, lambda1, lambda2,
-                       max.iter = 100, tol = 1e-4, initpars = NULL) {
-  # THis function solves the optimization problem:
-  #
-  # argmin (1/2n) ||y - sum_{j=1}^{p}f_j||_n^2 +
-  #                       \sum_{j=1}^p (lambda1)||f_j||_n +
-  #                                    (lambda2)*TV(f_j).
-  #
-  #
-  # y: A response vector assumed to be centered
-  # y.mean: Mean of uncentered response vector
-  # x: A n*p matrix of covariates assumed to be column centered
-  # x.mean: Means of uncentered design x.
-  # ord: Matrix of dim n*p giving the orders/ranks of each coavairte.
-  # k: Order of the trend filtering problem. Possible choices are 0,1,2,3.
-  # lambda1, lambda2: Scalar tuning parameters
-  # max.iter: maximum number of iterations for block coordinate descent
-  # tol: Tolerance for algorithm
-  # intpars: Initial parameters, taken as 0 if none provided
-
-  n <- length(y)
-  p <- ncol(x)
-
-  if(is.null(initpars)) {
-    initpars <- matrix(0, ncol = p, nrow = n)
-  }
-
-  old.pars <- initpars
-
-  #p <- 96
-  # Begin loop for block coordinate descent
-  for(i in 1:max.iter) {
-    for(j in 1:p) {
-      #print(j)
-      res <- y - apply(initpars[, -j], 1, sum)
-      initpars[ord[,j], j] <- solve.prox.tf(res[ord[, j]],
-                                            x[ord[, j], j], k = k, lambda1, lambda2)
-    }
-
-    if(mean((initpars - old.pars)^2) < tol ) {
-      return(initpars)
-    } else {
-      old.pars <- initpars
-    }
-  }
-  return(initpars)
-}
-
 
 tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
                     nlam = 50, k = 0, family = "binomial",
-                    initintercept = NULL, step = 1, alpha = 0.5) {
+                    initintercept = NULL, step = 1, alpha = 0.5,
+                    gamma.par = 0.5) {
   # This function solves the trenfiltering/total variation problem.
   # In this function we will solve the optmization problem for a
   # sequence of lambda values using warm starts.
@@ -324,23 +274,13 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   # k <- 0
 
 
-  x <- matrix(x)
+  x <- as.matrix(x)
   n <- length(y)
   p <- ncol(x)
 
-  if(family == "gaussian") {
-    x.mean <- apply(x, 2, mean)
-    y.mean <- mean(y)
-
-
-    x.cen <- scale(x, scale = FALSE)
-    y.cen <- y - y.mean
-    ord <- apply(x.cen, 2, order)
-  } else {
-    ord <- apply(x, 2, order)
-    ranks <- apply(x, 2, rank)
-    x_ord <- apply(x, 2, sort)
-  }
+  ord <- apply(x, 2, order)
+  ranks <- apply(x, 2, rank)
+  x_ord <- apply(x, 2, sort)
 
   lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
                  length = nlam)
@@ -354,58 +294,38 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
     mp <- mean(y)
     initintercept <- log(mp/(1-mp))
   }
-
+  if(is.null(initintercept) & family == "gaussian") {
+    initintercept <- mean(y)
+  }
 
   if(family == "binomial"){
     y[y==0] <- -1
   }
 
-  ans <- array(0, dim = c(n,p,nlam))
+  ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
 
   for(i in 1:nlam) {
-    print(i)
-    if(family == "gaussian") {
-      ans[,, i] <- tf_one(y.cen, y.mean, x.cen, x.mean,
-                          ord, k= k, lam.seq[i], lam.seq[i]^2,
-                          max.iter = max.iter,
-                          tol = tol, initpars = initpars)
-      initpars <- ans[,, i]
-    } else if(family == "binomial") {
-      temp <- tf_logistic_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
-                              initpars, initintercept, n, p,
-                              max_iter = max.iter, tol = tol,
-                              step_size = step, alpha = alpha, k=k)
-      initpars <- temp$fhat
-      initintercept <- temp$intercept
+    #cat("Lambda value: ", i, "\n")
+    temp <- tf_one(y, x_ord, ord, gamma.par*lam.seq[i], (1-gamma.par) * lam.seq[i],
+                          init_fhat = initpars, init_intercept = initintercept,
+                          k=k, max_iter = max.iter, tol = tol,
+                          step_size = step, alpha = alpha,
+                          family = family)
+    ans[, , i] <- temp$fhat
+    ans.inters[i] <- temp$intercept
 
-      ans[, , i] <- temp$fhat
-      ans.inters[i] <- temp$intercept
-
-
-    }
-
+    initintercept <- ans.inters[i]
+    initpars <- ans[, , i]
   }
 
-  if(family == "gaussian") {
-    obj <- list("f_hat" = ans,
-                "x.cen" = x.cen,
-                "y.cen" = y.cen,
-                "x.mean" = x.mean,
-                "y.mean" = y.mean,
-                "ord" = ord,
-                "lam" = lam.seq,
-                "k" = k,
-                "family" = family)
-  } else if(family == "binomial") {
-    obj <- list("f_hat" = ans,
-                "intercept" = ans.inters,
-                "x" = x,
-                "ord" = ord,
-                "lam" = lam.seq,
-                "k" = k,
-                "family" = family)
-  }
+  obj <- list("f_hat" = ans,
+              "intercept" = ans.inters,
+              "x" = x,
+              "ord" = ord,
+              "lam" = lam.seq,
+              "k" = k,
+              "family" = family)
 
   class(obj) <- "tf"
   return(obj)
@@ -413,32 +333,15 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
 
 predict.tf <- function(obj, new.data, type = "function") {
 
-  if(obj$family == "gaussian") {
-    new.dat.cen <- scale(new.data, scale = FALSE, center = obj$x.mean)
 
-    nlam <- length(obj$lam)
-    p <- dim(obj$f_hat)[2]
+  nlam <- length(obj$lam)
+  p <- dim(obj$f_hat)[2]
 
-    ans <- array(0, dim = c(dim(new.data), nlam) )
-    for(i in 1:nlam) {
-      for(j in 1:p) {
-        ans[,j,i] <- approx(obj$x.cen[,j], obj$f_hat[,j,i], new.dat.cen[, j],
-                            rule = 2)$y
-      }
-    }
-
-
-  } else if(obj$family == "binomial") {
-
-    nlam <- length(obj$lam)
-    p <- dim(obj$f_hat)[2]
-
-    ans <- array(0, dim = c(dim(new.data), nlam) )
-    for(i in 1:nlam) {
-      for(j in 1:p) {
-        ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.data[, j],
-                            rule = 2)$y
-      }
+  ans <- array(0, dim = c(dim(new.data), nlam) )
+  for(i in 1:nlam) {
+    for(j in 1:p) {
+      ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.data[, j],
+                          rule = 2)$y
     }
   }
 
@@ -446,7 +349,10 @@ predict.tf <- function(obj, new.data, type = "function") {
     return(ans)
   } else {
     if(obj$family == "gaussian"){
-      return(apply(ans, c(1,3),sum) + obj$y.mean)
+      temp <- apply(ans, c(1,3),sum)
+      temp <- t(apply(temp, 1, "+", obj$intercept))
+
+      return(temp)
     } else {
       temp <- apply(ans, c(1,3),sum)
       temp <- t(apply(temp, 1, "+", obj$intercept))

@@ -295,7 +295,7 @@ arma::field<mat> GetZ(arma::mat f_hat, double intercept,
   for(int i = 0; i < p; i++) {
     arma::vec temp_y = inter_step.col(i);
 
-    arma::vec temp_ans = cpp_solve_prox(temp_y.elem(ord_mat.col(i)),
+    arma::vec temp_ans = cpp_solve_prox(temp_y.elem(ord_mat.col(i)) - mean(temp_y),
                                         x_mat_ord.col(i), step_size*lambda1/n,
                                         step_size*lambda2/n, n, 500);
 

@@ -105,7 +105,8 @@ sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
                          initpars = NULL, initintercept = 0,
                          lambda.max = 1,
                          lambda.min.ratio = 1e-3,
-                         nlam = 50, step = 1, alpha = 0.5) {
+                         nlam = 50, step = 1, alpha = 0.5,
+                         gamma.par = 0.5) {
   # This function solves the sobolev norm prooblem
   # In this function we will solve the optmization problem for a
   # sequence of lambda values using warm starts.
@@ -162,16 +163,16 @@ sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
   ans.inters <- numeric(nlam)
 
   for(i in 1:nlam) {
-    print(i)
     if(family == "gaussian") {
       ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
-                           ord, lam.seq[i], lam.seq[i]^2,
+                           ord, lam.seq[i], lam.seq[i],
                            max.iter = max.iter,
                            tol = tol, initpars = initpars)
       initpars <- ans[,, i]
     } else if(family == "binomial") {
+      #cat("Num lambda: ", i, "\n")
       temp <- cpp_spp_one(y, x_ord, ord, ranks,
-                          lambda1 = lam.seq[i], lambda2 = lam.seq[i]^2,
+                          lambda1 = gamma.par*lam.seq[i], lambda2 = (1 - gamma.par)*lam.seq[i],
                           initpars, initintercept, n, p,
                           max_iter = max.iter,  tol = tol,
                           step_size = step, alpha = alpha)
