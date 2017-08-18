@@ -8,8 +8,8 @@ set s = 1
 		# par1: $s seed number
 		# par2: nvar 100; number of variabls to use.
 
-		qsub -q "shojaie*"  -cwd  -o /dev/null -e /dev/null  simulations.csh $s 100
-		
+		qsub -q "shojaie*"  -cwd  -o /dev/null -e /dev/null  simulations.csh $s 10
+
 		@ s++
 	end
 
