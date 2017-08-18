@@ -48,12 +48,16 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   #require(SAM)
   p <- ncol(x.train)
   J <- nbasis
+
+  cat("Before full model", "\n")
   full.mod <- samLL(x.train, y.train,
                     nlambda = 50, lambda.min.ratio = lambda.min.ratio,
                     p = nbasis, ...)
 
+  cat("Full model done", "\n")
   cv <- cv.spam(x.train, y.train, folds = folds,
                     lam.seq = full.mod$lambda, p = nbasis, ...)
+  cat("CV done", "\n")
 
   # Obtain the minimum CV and one SE lambda index
   ind.min <- which.min(cv$mu)[1]

@@ -14,7 +14,7 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
   pred.errors <- matrix(NA, ncol = nlam, nrow = num.folds)
   lam.seq <- NULL
   for(i in 1:num.folds) {
-    print(i)
+    cat("CV fold number: ", i, "\n")
     # Obtain the index of things we will train on this round.
     temp.ind <- which(folds != i)
 
@@ -55,14 +55,16 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
                           folds, max.lambda, lam.min.ratio, ...) {
   require(uniSolve)
   p <- ncol(x.train)
-  full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
-                           lambda.min.ratio = lam.min.ratio, max.iter = 3000,
-                           tol = 1e-4)
+  cat("Before full model", "\n")
 
+  full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
+                           lambda.min.ratio = lam.min.ratio, max.iter = 1000,
+                           tol = 1e-10)
+  cat("Full model done", "\n")
 
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
                      nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio)
-
+  cat("CV done", "\n")
   # Obtain the minimum CV and one SE lambda
   ind.min <- which.min(cv$mu)[1]
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &

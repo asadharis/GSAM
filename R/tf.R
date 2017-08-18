@@ -33,14 +33,23 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2) {
   # whereas we would like to have (1/2n) instead of (1/2).
   if(k==2) {
     f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-                         lambda = n*lambda2, thinning = FALSE,
+                         lambda = n*lambda2, thinning = TRUE,
                          control = trendfilter.control.list(obj_tol = 1e-12,
                                                             max_iter = 600))$beta[, 1]
 
   } else {
     f_hat <- trendfilter(x = x.ord, y = y.ord,  k = k, family = "gaussian",
-                         lambda = n*lambda2, thinning = FALSE)$beta[, 1]
+                         lambda = n*lambda2, thinning = TRUE)$beta[, 1]
 
+  }
+
+  if(length(f_hat) != n){
+    # Find how many values are missing
+    n.res <- n - length(f_hat)
+    # Find where in x.ord we have values too close to each other.
+    # Find the smallest 'n.res' values
+    ind.s <- order(diff(x.ord))[1:n.res]
+    f_hat <- R.utils::insert(f_hat, ind.s, values = f_hat[ind.s])
   }
 
   # We return the desired value after soft-thresolding.
@@ -307,7 +316,7 @@ tf.norm <- function(y, x, max.iter = 100, tol = 1e-4,
 
   for(i in 1:nlam) {
     #cat("Lambda value: ", i, "\n")
-    temp <- tf_one(y, x_ord, ord, gamma.par*lam.seq[i], (1-gamma.par) * lam.seq[i],
+    temp <- tf_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
                           init_fhat = initpars, init_intercept = initintercept,
                           k=k, max_iter = max.iter, tol = tol,
                           step_size = step, alpha = alpha,

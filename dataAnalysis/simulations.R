@@ -1,16 +1,18 @@
 
-run.sim <- function(seed = 1, nvars = 1000) {
+run.sim <- function(seed = 1) {
   require(uniSolve)
   source("spam.R")
-  source("helpers.R")
+  source("lasso.R")
+
   source("ssp.R")
   source("trendfiltering.R")
 
-  load("data/LUNGdat.RData")
+  load("data/ERdat.RData")
   #dat <- get.data()
   n <- length(dat$y)
 
-  seed <- 1
+  #dat$x <- dat$x[,1:5]
+  #seed <- 1
   # Obtain index for training set.
 
   # We only use the seed value to split the data into training/test.
@@ -26,9 +28,12 @@ run.sim <- function(seed = 1, nvars = 1000) {
   folds <- cut(seq(1,nrow(x.train)), breaks=5,labels=FALSE)
 
 
+  # Lasso Results First
+  lasso <- simulation.lasso(x.train, y.train, x.test, y.test, folds,
+                            lambda.min.ratio = 1e-4)
+
   # SPAM RESULTS!
-  spam1 <- simulation.spam(x.train, y.train, x.test, y.test,
-                           folds = folds, nbasis = 1)
+
   spam2 <- simulation.spam(x.train, y.train, x.test, y.test,
                            folds = folds, nbasis = 2)
   spam3 <- simulation.spam(x.train, y.train, x.test, y.test,
@@ -42,20 +47,23 @@ run.sim <- function(seed = 1, nvars = 1000) {
 
   # SSP RESULTS!
   ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds,
-                        max.lambda = 1, lam.min.ratio = 1e-4)
+                        max.lambda = 1, lam.min.ratio = 1e-5)
 
   # Trend filtering results
-  tf0 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=0)
+  tf0 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=0,
+                       lambda.min.ratio = 1e-5,lambda.max = 1)
 
-  tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1)
+  tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1,
+                       lambda.min.ratio = 1e-5,lambda.max = 1)
 
-  tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2)
+  tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2,
+                       lambda.min.ratio = 1e-5,lambda.max = 1)
 
 
-  filename <- paste0("riboflavin_nvars", nvars)
+  filename <- paste0("ERdata")
 
   if(dir.exists(filename)) {
-    save(spam1, spam2, spam3, spam4,spam5, spam6, ssp, tf0, tf1, tf2,
+    save(lasso, spam2, spam3, spam4,spam5, spam6, ssp, tf0, tf1, tf2,
          file = paste0(filename, "/seed", seed, ".RData"))
   } else {
     dir.create(filename)
@@ -67,9 +75,7 @@ run.sim <- function(seed = 1, nvars = 1000) {
 args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
 
-nvars <- as.numeric(args[[2]])
-
-run.sim(seed=seed, nvars = nvars)
+run.sim(seed=seed)
 
 
 q(save = "no")

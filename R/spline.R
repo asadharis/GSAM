@@ -172,7 +172,7 @@ sobolev.norm <- function(y, x, family = "binomial",max.iter = 100, tol = 1e-4,
     } else if(family == "binomial") {
       #cat("Num lambda: ", i, "\n")
       temp <- cpp_spp_one(y, x_ord, ord, ranks,
-                          lambda1 = gamma.par*lam.seq[i], lambda2 = (1 - gamma.par)*lam.seq[i],
+                          lambda1 = lam.seq[i], lambda2 = lam.seq[i]^2,
                           initpars, initintercept, n, p,
                           max_iter = max.iter,  tol = tol,
                           step_size = step, alpha = alpha)
