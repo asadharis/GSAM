@@ -4,7 +4,7 @@
 
 # First a cross-validation for HierBasis
 cv.ssp <- function(x.train, y.train, folds, nlam = 30,
-                         max.lambda, lam.min.ratio){
+                         max.lambda, lam.min.ratio, gamma.par){
   # We assume that the y.train is coded as (-1,1) for HierBasis.
 
   require(uniSolve)
@@ -30,7 +30,8 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
     mod <- sobolev.norm(temp.y, temp.x, nlam = nlam,
                         lambda.max = max.lambda,
                         lambda.min.ratio = lam.min.ratio,
-                        max.iter = 3000, family = "binomial")
+                        max.iter = 1000, family = "binomial", tol = 1e-8,
+                        gamma.par = gamma.par)
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
@@ -52,18 +53,26 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.ssp <- function(x.train, y.train, x.test, y.test,
-                          folds, max.lambda, lam.min.ratio, ...) {
+                          folds, max.lambda, lam.min.ratio, gamma.par,...) {
   require(uniSolve)
   p <- ncol(x.train)
+  n <- length(y.train)
   cat("Before full model", "\n")
 
+  max.lambda <- 1
+  lam.min.ratio <- 0.1
+  gamma.par <- NULL
   full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
-                           lambda.min.ratio = lam.min.ratio, max.iter = 1000,
-                           tol = 1e-10)
+                           lambda.min.ratio = lam.min.ratio, max.iter = 500,
+                           tol = 1e-4, gamma.par = gamma.par,step = n,
+                           nlam = 10)
   cat("Full model done", "\n")
 
+  apply(abs(full.mod$f_hat),3,function(x){sum(colSums(x)!=0)})
+
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
-                     nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio)
+                     nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio,
+               gamma.par = gamma.par)
   cat("CV done", "\n")
   # Obtain the minimum CV and one SE lambda
   ind.min <- which.min(cv$mu)[1]

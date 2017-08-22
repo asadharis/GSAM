@@ -217,7 +217,7 @@ arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
     f_hat = cpp_spline_raw(y_ord, x_ord, temp_lam, n, n_grid);
   }
 
-  double temp_inner = as_scalar(1 - lambda1/mean(square(f_hat)));
+  double temp_inner = as_scalar(1 - lambda1/(norm(f_hat)/pow(n, 0.5)) );
   if(temp_inner < 0) {
     return 0*f_hat;
   } else {
@@ -437,7 +437,7 @@ List cpp_spp_one(arma::vec y, arma::mat x_ord,
 
     double temp_res = norm(new_ans(1) - old_ans(1), "fro")/(pow(n*p, 0.5))
     + norm(new_ans(0) - old_ans(0), "fro");
-    //Rcout << "Criteria: " << temp_res << "\n";
+    Rcout << "Criteria: " << temp_res << "\n";
     if(temp_res <= tol) {
       converged = true;
     } else {
