@@ -20,7 +20,7 @@ get.pen <- function(obj) {
 
 
 # Solves the proximal problem for the sobolev norm
-solve.prox.spline <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
+solve.prox.spline <- function(y.ord, x.ord, lambda1, lambda2) {
   # We now want to solve the optimization problem.
   # minimize (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda1)*||f|| +(lambda2)*sqrt(J(f))
   #
@@ -34,24 +34,28 @@ solve.prox.spline <- function(y, y.ord, x.ord, theta, lambda1, lambda2) {
 
   require(stats)
 
-  n <- length(y)
+   n <- length(y.ord)
   tempf <- function(lam_x) {
-    obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lam_x)
+    obj <- cpp_spline(y.ord, x.ord, lam_x, n, 1000)
     lam_x*sqrt(get.pen(obj)) - lambda2/2
   }
   if(tempf(lambda2*1e+2) < 0) {
     #obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lambda2)
     b1 <- cov(x.ord,y.ord)/var(x.ord)
     b0 <- mean(y.ord) - (b1*mean(x.ord))
-    f_hat <- b0 + (b1*x.ord)
+    fhat <- b0 + (b1*x.ord)
+    pen <- 0
   } else {
     lam <- uniroot(tempf, c(lambda2*1e-10,lambda2*1e+2))$root
-    f_hat <- cpp_spline(y.ord, x.ord, lam, n, 500)$sy
+    f_hat <- cpp_spline(y.ord, x.ord, lam, n, 1000)
+    fhat <- f_hat$sy
+    pen <- sqrt(get.pen(f_hat))
   }
+  temp <- max((1 - lambda1/sqrt(mean(fhat^2))), 0)
 
   # Finally we return the desired value
-  max((1 - lambda1/sqrt(mean(f_hat^2))), 0)*f_hat
-
+  return(list("fhat" = temp*fhat,
+              "pen" = temp*pen))
 }
 
 # This function calculates the loss function or the logistic loss.
@@ -91,6 +95,8 @@ GetVectorR2_spline <- function(y, f_hat, intercept){
 
   -1*(y - linear_part)/n
 }
+
+
 # This function evaluates the next iteration
 # for a given set of parameter values and fixed step size.
 # In out notation this corresponds to z, where
@@ -108,9 +114,9 @@ GetVectorR2_spline <- function(y, f_hat, intercept){
 #   lambda1, lambda2: The tuning parameters.
 #   y: The response vector to evaluate the derivate.
 GetZ_spline <- function(f_hat, intercept, step_size,
-                 x_mat_ord, ord_mat, k,
+                 x_mat_ord, ord_mat,
                  lambda1, lambda2, y,
-                 family = "gaussian") {
+                 family) {
 
   n <- nrow(f_hat)
   p <- ncol(f_hat)
@@ -127,18 +133,20 @@ GetZ_spline <- function(f_hat, intercept, step_size,
 
   intercept_new <- intercept - (step_size * sum(vector_r))
 
-  inter_step <- apply(f_hat, 2, "-", step_size * vector_r)
-
   ans <- matrix(0, nrow = n, ncol = p)
+  pen.seq <- numeric(p)
+  pen.seq2 <- numeric(p)
   for(i in 1:p) {
-    temp_y <- inter_step[ord_mat[, i], i]
+    temp_y <- f_hat[,i] - (step_size*vector_r)
 
-    ans[ord_mat[, i], i] <-  solve.prox.spline(temp_y - mean(temp_y),
-                                           x_mat_ord[, i],
-                                           k = k, lambda1 = lambda1*step_size/n,
-                                           lambda2 = lambda2*step_size/n);
+    temp <- solve.prox.spline(temp_y[ord_mat[, i]]- mean(temp_y),
+                              x_mat_ord[, i],
+                              lambda1 = lambda1*step_size/n,
+                              lambda2 = lambda2*step_size/n);
+    ans[ord_mat[, i], i] <- temp$fhat
+    pen.seq[i] <- lambda1*sqrt(mean(temp$fhat^2)) + lambda2*temp$pen
   }
-  list(intercept_new, ans)
+  list(intercept_new, ans, pen.seq)
 }
 
 # This function performs the line search algorithm and returns the last
@@ -149,8 +157,8 @@ GetZ_spline <- function(f_hat, intercept, step_size,
 #   step_size: An initial value for the step size. Common value is 1.
 #   For other parameters see function: 'GetZ()'
 LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
-                       x_mat_ord, ord_mat, k, lambda1, lambda2,
-                       family = "gaussian") {
+                       x_mat_ord, ord_mat, lambda1, lambda2,
+                       family, pen.val) {
 
 
   if(family == "binomial") {
@@ -164,16 +172,16 @@ LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
     loss_val <- GetLS_spline(y, f_hat, intercept)
     vector_r <- GetVectorR2_spline(y, f_hat, intercept)
     ############## Continuous #####################
-
   }
 
+  obj.fun <- loss_val + pen.val
 
   convg <- FALSE
   while(!convg) {
     # Obtain next iteration given step size.
     temp_z <- GetZ_spline(f_hat, intercept, step_size,
-                   x_mat_ord, ord_mat, k,
-                   lambda1, lambda2, y, family = family)
+                   x_mat_ord, ord_mat,
+                   lambda1, lambda2, y, family)
 
     if(family == "binomial") {
       # Generate the values needed for stopping criteria.
@@ -191,17 +199,18 @@ LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
       sum(vector_r %*% (temp_z[[2]] - f_hat)) +
       (1/(2*step_size)) * (sum((temp_z[[2]] - f_hat)^2) + (temp_z[[1]] - intercept)^2)
 
+    #lhs <- lhs + sum(temp_z[[3]])
+    #rhs <- obj.fun
     # Check for convergence.
+
     if(lhs <= rhs) {
       convg <- TRUE
     } else {
       step_size <- alpha * step_size
     }
   }
-
-
   # Return the next iterate based on the selected step size.
-  return(temp_z)
+  return(c(temp_z, step_size))
 }
 
 # This function performs sparse additive trend-filtering for one
@@ -219,10 +228,10 @@ LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
 #   step_size: Initial step size for the line search algorithm.
 #   alpha: Tuning parameter for the line search algorithm.
 sobolev_one <- function(y, x_ord, ord, lambda1, lambda2,
-                   init_fhat, init_intercept, k=0,
+                   init_fhat, init_intercept,
                    max_iter = 100, tol = 1e-4,
-                   step_size = 1, alpha = 0.5,
-                   family = "gaussian") {
+                   step_size = length(y), alpha = 0.5,
+                   family) {
 
   counter <- 1
   converged <- FALSE
@@ -230,18 +239,37 @@ sobolev_one <- function(y, x_ord, ord, lambda1, lambda2,
   p <- ncol(x_ord)
 
   # Initialize parameters.
-  old_ans <- vector("list", 2);
-  old_ans[[1]] <- init_intercept
-  old_ans[[2]] <- init_fhat
 
+  fhat_seq <- array(0, dim = c(max_iter, n, p))
+  inter_seq <- numeric(max_iter)
+  stop.seq <- numeric(max_iter)
+  step.seq <- numeric(max_iter)
+  obj.seq <- numeric(max_iter)
 
-  while(counter < max_iter & !converged) {
-    new_ans <- LineSearch_spline(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
-                          x_ord, ord, k, lambda1, lambda2, family)
+  pen.seq <- matrix(0, ncol = p, nrow = max_iter)
+  old_ans <- GetZ_spline(init_fhat, init_intercept, step_size,
+             x_ord, ord, lambda1, lambda2, y, family)
+  old_ans <- LineSearch_spline(alpha, step_size = step_size, y, old_ans[[2]], old_ans[[1]],
+                               x_ord, ord, lambda1, lambda2, family, sum(old_ans[[3]]))
 
-    temp_res <- sum((new_ans[[2]] - old_ans[[2]])^2)/(n*p) +
-      (new_ans[[1]] - old_ans[[1]])^2
+  while(counter <= max_iter & !converged) {
 
+    new_ans <- LineSearch_spline(alpha, step_size = step_size, y, old_ans[[2]], old_ans[[1]],
+                                 x_ord, ord, lambda1, lambda2, family, sum(old_ans[[3]]))
+
+    fhat_seq[counter,,] <- new_ans[[2]]
+    inter_seq[counter] <- new_ans[[1]]
+    step.seq[counter] <- new_ans[[4]]
+
+    obj.seq[counter] <- GetLogistic_spline(y, new_ans[[2]], new_ans[[1]]) + sum(new_ans[[3]])
+
+    temp_res <- sum((new_ans[[2]] - old_ans[[2]])^2) + (new_ans[[1]] - old_ans[[1]])^2
+    temp_res2 <- sum(old_ans[[2]]^2) + (old_ans[[1]])^2
+    temp_res <- sqrt(temp_res/temp_res2)
+
+    cat("Counter:", counter, "temp_res", temp_res, "\n")
+    stop.seq[counter] <- temp_res
+    plot(obj.seq[1:counter], type = "l", log = "y")
     if(temp_res <= tol) {
       converged <- TRUE
     } else {
@@ -252,13 +280,54 @@ sobolev_one <- function(y, x_ord, ord, lambda1, lambda2,
 
   list("fhat" = new_ans[[2]],
        "intercept" = new_ans[[1]],
-       "conv" = converged)
+       "conv" = converged,
+       "fhat_seq" = fhat_seq,
+       "inter_seq" = inter_seq,
+       "stop_res" = stop.seq,
+       "step_seq" = step.seq,
+       "obj_seq" = obj.seq,
+       "pen_seq" = pen.seq)
 }
 
+find.lambdamax <- function(y2, x_mat_ord, ord_mat,
+                           lambda2, family) {
+  n <- length(y2)
+  y.bar <- sum(y2==1)/n
+  inter <- log(y.bar/(1-y.bar))
+
+  if(is.null(lam.max)){
+    vecR <- (-y2/n)/(1 + exp(y2 * inter))
+    lam.max <- n*sqrt(mean(vecR^2))
+  }
+
+  f_hat <- matrix(0, ncol = ncol(x_mat_ord), nrow = nrow(x_mat_ord))
+
+  convg <- FALSE
+  while(!convg){
+    lam <- lam.max*0.9
+    if(is.null(lambda2)){
+      f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
+                               x_mat_ord, ord_mat,
+                               lam, lam^2, y2, family)
+    } else {
+      f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
+                               x_mat_ord, ord_mat,
+                               lam, lambda2, y2, family)
+    }
+      temp_res <- sum((f_hat_new[[2]] - f_hat)^2)
+      if(temp_res < 1e-30){
+        lam.max <- lam
+      } else {
+        convg <- TRUE
+      }
+
+  }
+  return(lam.max)
+}
 
 sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
-                    initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-2,
-                    nlam = 50, k = 0, family = "binomial",
+                    initpars = NULL, lambda.max = NULL, lambda.min.ratio = 1e-1,
+                    nlam = 50, family,
                     initintercept = NULL, step = length(y), alpha = 0.5,
                     gamma.par = NULL) {
   # This function solves the trenfiltering/total variation problem.
@@ -277,7 +346,6 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   # lambda.min.ratio = 1e-3;
   # nlam = 50
   # k <- 0
-
 
   x <- as.matrix(x)
   n <- length(y)
@@ -310,14 +378,28 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
 
-  for(i in 1:nlam) {
+  full.ans <- vector("list", length = nlam)
 
-    #cat("Lambda value: ", i, "\n")
-    temp <- sobolev_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
-                   init_fhat = initpars, init_intercept = initintercept,
-                   k=k, max_iter = max.iter, tol = tol,
-                   step_size = step, alpha = alpha,
-                   family = family)
+  for(i in 1:nlam) {
+    cat("Lambda value: ", i, "\n")
+    if(is.null(gamma.par)){
+      temp <- sobolev_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
+                          init_fhat = initpars, init_intercept = initintercept,
+                           max_iter = max.iter, tol = tol,
+                          step_size = step, alpha = alpha,
+                          family = family)
+
+    } else {
+      temp <- sobolev_one(y, x_ord, ord, gamma.par*lam.seq[i],
+                          (1-gamma.par)*lam.seq[i],
+                          init_fhat = initpars, init_intercept = initintercept,
+                           max_iter = max.iter, tol = tol,
+                          step_size = step, alpha = alpha,
+                          family = family)
+
+    }
+
+    full.ans[[i]] <- temp
     ans[, , i] <- temp$fhat
     ans.inters[i] <- temp$intercept
 
@@ -331,182 +413,15 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
               "ord" = ord,
               "lam" = lam.seq,
               "k" = k,
-              "family" = family)
-
-  class(obj) <- "tf"
-  return(obj)
-}
-
-
-
-
-ssp_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2, max.iter = 100, tol = 1e-4,
-                    initpars = NULL) {
-  # THis function solves the optimization problem:
-  #
-  # argmin (1/2n) ||y - sum_{j=1}^{p}f_j||_n^2 +
-  #                       \sum_{j=1}^p (lambda1)||f_j||_n +
-  #                                    (lambda2)*sqrt(J(f_j)).
-  #
-  #
-  #
-  # y: A response vector assumed to be centered
-  # y.mean: Mean of uncentered response vector
-  # x: A n*p matrix of covariates assumed to be column centered
-  # x.mean: Means of uncentered design x.
-  # ord: Matrix of dim n*p giving the orders/ranks of each coavairte.
-  # lambda1, lambda2: Scalar tuning parameters
-  # max.iter: maximum number of iterations for block coordinate descent
-  # tol: Tolerance for algorithm
-  # intpars: Initial parameters, taken as 0 if none provided
-
-  n <- length(y)
-  p <- ncol(x)
-
-  if(is.null(initpars)) {
-    initpars <- matrix(0, ncol = p, nrow = n)
-  }
-
-  old.pars <- initpars
-
-  # Begin loop for block coordinate descent
-  for(i in 1:max.iter) {
-    for(j in 1:p) {
-      res <- y - apply(initpars[, -j],1,sum)
-      initpars[ord[,j], j] <- solve.prox(res, res[ord[,j]], x[ord[,j],j], rep(0, n), lambda1, lambda2)
-    }
-    if(mean((initpars - old.pars)^2) < tol ) {
-      return(initpars)
-    } else {
-      old.pars <- initpars
-    }
-  }
-  return(initpars)
-}
-
-
-
-sobolev.norm <- function(y, x, family = "binomial", max.iter = 100, tol = 1e-4,
-                         initpars = NULL, initintercept = NULL,
-                         lambda.max = 1,
-                         lambda.min.ratio = 1e-3,
-                         nlam = 50, step = length(y), alpha = 0.5,
-                         gamma.par = NULL) {
-  # This function solves the sobolev norm prooblem
-  # In this function we will solve the optmization problem for a
-  # sequence of lambda values using warm starts.
-  # We solve the above lambda values for the lambda1 = lambda and
-  # lambda2 = lambda^2.
-  # set.seed(1)
-  # n <- 200
-  # p <- 4
-  # y = rbinom(n, size = 1, prob = 0.5); x = matrix(rnorm(n*p), ncol = p);
-  # max.iter = 1e+4; tol = 1e-4;
-  # initpars = NULL;
-  # initintercept = NULL;
-  # lambda.max = 1;
-  # lambda.min.ratio = 1e-6;
-  # nlam = 50
-  # step = 1
-  # alpha = 0.5
-  # family = "binomial"
-
-  if(family == "binomial"){
-    y[y==0] <- -1
-  }
-
-  n <- length(y)
-  p <- ncol(x)
-
-  if(family == "gaussian") {
-    x.mean <- apply(x, 2, mean)
-    y.mean <- mean(y)
-
-
-    x.cen <- scale(x, scale = FALSE)
-    y.cen <- y - y.mean
-    ord <- apply(x.cen, 2, order)
-  } else {
-    ord <- apply(x, 2, order) - 1
-    ranks <- apply(x, 2, rank) - 1
-    x_ord <- apply(x, 2, sort)
-  }
-
-  lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
-                 length = nlam)
-  lam.seq <- 10^lam.seq
-
-  if(is.null(initpars)) {
-    initpars <- matrix(0, ncol = p, nrow = n)
-  }
-
-  if(is.null(initintercept) & family == "binomial") {
-    mp <- mean(y)
-    initintercept <- log(mp/(1-mp)) ;
-  }
-
-  if(is.null(initintercept) & family == "gaussian") {
-    initintercept = 0;
-  }
-  ans <- array(0, dim = c(n,p,nlam))
-  ans.inters <- numeric(nlam)
-
-  for(i in 1:nlam) {
-    if(family == "gaussian") {
-      ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
-                           ord, lam.seq[i], lam.seq[i],
-                           max.iter = max.iter,
-                           tol = tol, initpars = initpars)
-      initpars <- ans[,, i]
-    } else if(family == "binomial") {
-
-      if(is.null(gamma.par)){
-        cat("Num lambda: ", i, "\n")
-        temp <- cpp_spp_one(y, x_ord, ord, ranks,
-                            lambda1 = lam.seq[i], lambda2 = lam.seq[i]^2,
-                            initpars, initintercept, n, p,
-                            max_iter = max.iter,  tol = tol,
-                            step_size = step, alpha = alpha)
-      } else {
-        cat("Num lambda: ", i, "\n")
-        temp <- cpp_spp_one(y, x_ord, ord, ranks,
-                            lambda1 = gamma.par*lam.seq[i], lambda2 = (1-gamma.par)*lam.seq[i],
-                            initpars, initintercept, n, p,
-                            max_iter = max.iter,  tol = tol,
-                            step_size = step, alpha = alpha)
-      }
-
-
-      ans[,,i] <- temp$fhat
-      ans.inters[i] <- temp$intercept
-      initpars <- temp$fhat
-      initintercept <- temp$intercept
-
-    }
-
-  }
-
-  if(family == "gaussian") {
-    obj <- list("f_hat" = ans,
-                "x.cen" = x.cen,
-                "y.cen" = y.cen,
-                "x.mean" = x.mean,
-                "y.mean" = y.mean,
-                "ord" = ord,
-                "lam" = lam.seq,
-                "family" = family)
-  } else if(family == "binomial") {
-    obj <- list("f_hat" = ans,
-                "intercept" = ans.inters,
-                "x" = x,
-                "ord" = ord,
-                "lam" = lam.seq,
-                "family" = family)
-  }
+              "family" = family,
+              "full" = full.ans)
 
   class(obj) <- "sobolev"
   return(obj)
 }
+
+
+
 
 
 predict.sobolev <- function(obj, new.data, type = "function") {
@@ -553,4 +468,174 @@ predict.sobolev <- function(obj, new.data, type = "function") {
   }
 
 }
+
+# ssp_one <- function(y, y.mean, x, x.mean, ord, lambda1, lambda2, max.iter = 100, tol = 1e-4,
+#                     initpars = NULL) {
+#   # THis function solves the optimization problem:
+#   #
+#   # argmin (1/2n) ||y - sum_{j=1}^{p}f_j||_n^2 +
+#   #                       \sum_{j=1}^p (lambda1)||f_j||_n +
+#   #                                    (lambda2)*sqrt(J(f_j)).
+#   #
+#   #
+#   #
+#   # y: A response vector assumed to be centered
+#   # y.mean: Mean of uncentered response vector
+#   # x: A n*p matrix of covariates assumed to be column centered
+#   # x.mean: Means of uncentered design x.
+#   # ord: Matrix of dim n*p giving the orders/ranks of each coavairte.
+#   # lambda1, lambda2: Scalar tuning parameters
+#   # max.iter: maximum number of iterations for block coordinate descent
+#   # tol: Tolerance for algorithm
+#   # intpars: Initial parameters, taken as 0 if none provided
+#
+#   n <- length(y)
+#   p <- ncol(x)
+#
+#   if(is.null(initpars)) {
+#     initpars <- matrix(0, ncol = p, nrow = n)
+#   }
+#
+#   old.pars <- initpars
+#
+#   # Begin loop for block coordinate descent
+#   for(i in 1:max.iter) {
+#     for(j in 1:p) {
+#       res <- y - apply(initpars[, -j],1,sum)
+#       initpars[ord[,j], j] <- solve.prox(res, res[ord[,j]], x[ord[,j],j], rep(0, n), lambda1, lambda2)
+#     }
+#     if(mean((initpars - old.pars)^2) < tol ) {
+#       return(initpars)
+#     } else {
+#       old.pars <- initpars
+#     }
+#   }
+#   return(initpars)
+# }
+#
+#
+#
+# sobolev.norm <- function(y, x, family = "binomial", max.iter = 100, tol = 1e-4,
+#                          initpars = NULL, initintercept = NULL,
+#                          lambda.max = 1,
+#                          lambda.min.ratio = 1e-3,
+#                          nlam = 50, step = length(y), alpha = 0.5,
+#                          gamma.par = NULL) {
+#   # This function solves the sobolev norm prooblem
+#   # In this function we will solve the optmization problem for a
+#   # sequence of lambda values using warm starts.
+#   # We solve the above lambda values for the lambda1 = lambda and
+#   # lambda2 = lambda^2.
+#   # set.seed(1)
+#   # n <- 200
+#   # p <- 4
+#   # y = rbinom(n, size = 1, prob = 0.5); x = matrix(rnorm(n*p), ncol = p);
+#   # max.iter = 1e+4; tol = 1e-4;
+#   # initpars = NULL;
+#   # initintercept = NULL;
+#   # lambda.max = 1;
+#   # lambda.min.ratio = 1e-6;
+#   # nlam = 50
+#   # step = 1
+#   # alpha = 0.5
+#   # family = "binomial"
+#
+#   if(family == "binomial"){
+#     y[y==0] <- -1
+#   }
+#
+#   n <- length(y)
+#   p <- ncol(x)
+#
+#   if(family == "gaussian") {
+#     x.mean <- apply(x, 2, mean)
+#     y.mean <- mean(y)
+#
+#
+#     x.cen <- scale(x, scale = FALSE)
+#     y.cen <- y - y.mean
+#     ord <- apply(x.cen, 2, order)
+#   } else {
+#     ord <- apply(x, 2, order) - 1
+#     ranks <- apply(x, 2, rank) - 1
+#     x_ord <- apply(x, 2, sort)
+#   }
+#
+#   lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
+#                  length = nlam)
+#   lam.seq <- 10^lam.seq
+#
+#   if(is.null(initpars)) {
+#     initpars <- matrix(0, ncol = p, nrow = n)
+#   }
+#
+#   if(is.null(initintercept) & family == "binomial") {
+#     mp <- mean(y)
+#     initintercept <- log(mp/(1-mp)) ;
+#   }
+#
+#   if(is.null(initintercept) & family == "gaussian") {
+#     initintercept = 0;
+#   }
+#   ans <- array(0, dim = c(n,p,nlam))
+#   ans.inters <- numeric(nlam)
+#
+#   for(i in 1:nlam) {
+#     if(family == "gaussian") {
+#       ans[,, i] <- ssp_one(y.cen, y.mean, x.cen, x.mean,
+#                            ord, lam.seq[i], lam.seq[i],
+#                            max.iter = max.iter,
+#                            tol = tol, initpars = initpars)
+#       initpars <- ans[,, i]
+#     } else if(family == "binomial") {
+#
+#       if(is.null(gamma.par)){
+#         cat("Num lambda: ", i, "\n")
+#         temp <- cpp_spp_one(y, x_ord, ord, ranks,
+#                             lambda1 = lam.seq[i], lambda2 = lam.seq[i]^2,
+#                             initpars, initintercept, n, p,
+#                             max_iter = max.iter,  tol = tol,
+#                             step_size = step, alpha = alpha)
+#       } else {
+#         cat("Num lambda: ", i, "\n")
+#         temp <- cpp_spp_one(y, x_ord, ord, ranks,
+#                             lambda1 = gamma.par*lam.seq[i], lambda2 = (1-gamma.par)*lam.seq[i],
+#                             initpars, initintercept, n, p,
+#                             max_iter = max.iter,  tol = tol,
+#                             step_size = step, alpha = alpha)
+#       }
+#
+#
+#       ans[,,i] <- temp$fhat
+#       ans.inters[i] <- temp$intercept
+#       initpars <- temp$fhat
+#       initintercept <- temp$intercept
+#
+#     }
+#
+#   }
+#
+#   if(family == "gaussian") {
+#     obj <- list("f_hat" = ans,
+#                 "x.cen" = x.cen,
+#                 "y.cen" = y.cen,
+#                 "x.mean" = x.mean,
+#                 "y.mean" = y.mean,
+#                 "ord" = ord,
+#                 "lam" = lam.seq,
+#                 "family" = family)
+#   } else if(family == "binomial") {
+#     obj <- list("f_hat" = ans,
+#                 "intercept" = ans.inters,
+#                 "x" = x,
+#                 "ord" = ord,
+#                 "lam" = lam.seq,
+#                 "family" = family)
+#   }
+#
+#   class(obj) <- "sobolev"
+#   return(obj)
+# }
+#
+
 

@@ -9,5 +9,5 @@ export(sobolev.norm)
 S3method(predict, sobolev)
 
 export(tf_one)
-
+export(sobolev_one)
 export(cpp_spline)

@@ -60,12 +60,12 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
   cat("Before full model", "\n")
 
   max.lambda <- 1
-  lam.min.ratio <- 0.1
+  lam.min.ratio <- 1e-2
   gamma.par <- NULL
-  full.mod <- sobolev.norm(y.train, x.train, lambda.max = max.lambda,
+  full.mod <- sobolev.norm(y = y.train, x.train, lambda.max = max.lambda,
                            lambda.min.ratio = lam.min.ratio, max.iter = 500,
-                           tol = 1e-4, gamma.par = gamma.par,step = n,
-                           nlam = 10)
+                           tol = 1e-3, gamma.par = gamma.par,step = n, alpha = 0.1,
+                           nlam = 30, family = "binomial")
   cat("Full model done", "\n")
 
   apply(abs(full.mod$f_hat),3,function(x){sum(colSums(x)!=0)})
