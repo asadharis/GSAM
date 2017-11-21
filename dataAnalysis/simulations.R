@@ -12,8 +12,8 @@ run.sim <- function(seed = 1,nvar = 10) {
   #dat <- get.data()
   n <- length(dat$y)
 
-  seed <- 1
-  nvar <- 100
+  seed <- 2
+  nvar <- 10
   dat$x <- dat$x[,1:nvar]
 
   # Obtain index for training set.
@@ -52,7 +52,7 @@ run.sim <- function(seed = 1,nvar = 10) {
 
   # SSP RESULTS!
   ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds,
-                        max.lambda = 0.5, lam.min.ratio = 1e-2,
+                        max.lambda = NULL, lam.min.ratio = 1e-1,
                         gamma.par = NULL)
 
   # Trend filtering results

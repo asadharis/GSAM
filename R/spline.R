@@ -54,8 +54,8 @@ solve.prox.spline <- function(y.ord, x.ord, lambda1, lambda2) {
   temp <- max((1 - lambda1/sqrt(mean(fhat^2))), 0)
 
   # Finally we return the desired value
-  return(list("fhat" = temp*fhat,
-              "pen" = temp*pen))
+  return(list("fhat" = temp*fhat))#,
+              #"pen" = temp*pen))
 }
 
 # This function calculates the loss function or the logistic loss.
@@ -134,9 +134,7 @@ GetZ_spline <- function(f_hat, intercept, step_size,
   intercept_new <- intercept - (step_size * sum(vector_r))
 
   ans <- matrix(0, nrow = n, ncol = p)
-  pen.seq <- numeric(p)
-  pen.seq2 <- numeric(p)
-  for(i in 1:p) {
+    for(i in 1:p) {
     temp_y <- f_hat[,i] - (step_size*vector_r)
 
     temp <- solve.prox.spline(temp_y[ord_mat[, i]]- mean(temp_y),
@@ -144,9 +142,8 @@ GetZ_spline <- function(f_hat, intercept, step_size,
                               lambda1 = lambda1*step_size/n,
                               lambda2 = lambda2*step_size/n);
     ans[ord_mat[, i], i] <- temp$fhat
-    pen.seq[i] <- lambda1*sqrt(mean(temp$fhat^2)) + lambda2*temp$pen
   }
-  list(intercept_new, ans, pen.seq)
+  list(intercept_new, ans)
 }
 
 # This function performs the line search algorithm and returns the last
@@ -158,7 +155,7 @@ GetZ_spline <- function(f_hat, intercept, step_size,
 #   For other parameters see function: 'GetZ()'
 LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
                        x_mat_ord, ord_mat, lambda1, lambda2,
-                       family, pen.val) {
+                       family) {
 
 
   if(family == "binomial") {
@@ -174,7 +171,6 @@ LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
     ############## Continuous #####################
   }
 
-  obj.fun <- loss_val + pen.val
 
   convg <- FALSE
   while(!convg) {
@@ -199,10 +195,7 @@ LineSearch_spline <- function(alpha, step_size, y, f_hat, intercept,
       sum(vector_r %*% (temp_z[[2]] - f_hat)) +
       (1/(2*step_size)) * (sum((temp_z[[2]] - f_hat)^2) + (temp_z[[1]] - intercept)^2)
 
-    #lhs <- lhs + sum(temp_z[[3]])
-    #rhs <- obj.fun
     # Check for convergence.
-
     if(lhs <= rhs) {
       convg <- TRUE
     } else {
@@ -239,80 +232,55 @@ sobolev_one <- function(y, x_ord, ord, lambda1, lambda2,
   p <- ncol(x_ord)
 
   # Initialize parameters.
-
-  fhat_seq <- array(0, dim = c(max_iter, n, p))
-  inter_seq <- numeric(max_iter)
-  stop.seq <- numeric(max_iter)
-  step.seq <- numeric(max_iter)
-  obj.seq <- numeric(max_iter)
-
-  pen.seq <- matrix(0, ncol = p, nrow = max_iter)
-  old_ans <- GetZ_spline(init_fhat, init_intercept, step_size,
-             x_ord, ord, lambda1, lambda2, y, family)
-  old_ans <- LineSearch_spline(alpha, step_size = step_size, y, old_ans[[2]], old_ans[[1]],
-                               x_ord, ord, lambda1, lambda2, family, sum(old_ans[[3]]))
+  old_ans <- list(init_intercept, init_fhat)
 
   while(counter <= max_iter & !converged) {
 
     new_ans <- LineSearch_spline(alpha, step_size = step_size, y, old_ans[[2]], old_ans[[1]],
-                                 x_ord, ord, lambda1, lambda2, family, sum(old_ans[[3]]))
-
-    fhat_seq[counter,,] <- new_ans[[2]]
-    inter_seq[counter] <- new_ans[[1]]
-    step.seq[counter] <- new_ans[[4]]
-
-    obj.seq[counter] <- GetLogistic_spline(y, new_ans[[2]], new_ans[[1]]) + sum(new_ans[[3]])
+                                 x_ord, ord, lambda1, lambda2, family)
 
     temp_res <- sum((new_ans[[2]] - old_ans[[2]])^2) + (new_ans[[1]] - old_ans[[1]])^2
     temp_res2 <- sum(old_ans[[2]]^2) + (old_ans[[1]])^2
     temp_res <- sqrt(temp_res/temp_res2)
 
-    cat("Counter:", counter, "temp_res", temp_res, "\n")
-    stop.seq[counter] <- temp_res
-    plot(obj.seq[1:counter], type = "l", log = "y")
+    #cat("Iteration:", counter, ". Res: ", temp_res,"\n")
     if(temp_res <= tol) {
       converged <- TRUE
     } else {
       counter <- counter + 1;
       old_ans <- new_ans;
+      step_size <- new_ans[[3]]
     }
   }
 
   list("fhat" = new_ans[[2]],
        "intercept" = new_ans[[1]],
-       "conv" = converged,
-       "fhat_seq" = fhat_seq,
-       "inter_seq" = inter_seq,
-       "stop_res" = stop.seq,
-       "step_seq" = step.seq,
-       "obj_seq" = obj.seq,
-       "pen_seq" = pen.seq)
+       "conv" = converged)
 }
 
 find.lambdamax <- function(y2, x_mat_ord, ord_mat,
-                           lambda2, family) {
+                           gamma, family) {
   n <- length(y2)
   y.bar <- sum(y2==1)/n
   inter <- log(y.bar/(1-y.bar))
 
-  if(is.null(lam.max)){
-    vecR <- (-y2/n)/(1 + exp(y2 * inter))
-    lam.max <- n*sqrt(mean(vecR^2))
-  }
+
+  vecR <- (-y2/n)/(1 + exp(y2 * inter))
+  lam.max <- n*sqrt(mean(vecR^2))
 
   f_hat <- matrix(0, ncol = ncol(x_mat_ord), nrow = nrow(x_mat_ord))
 
   convg <- FALSE
   while(!convg){
     lam <- lam.max*0.9
-    if(is.null(lambda2)){
+    if(is.null(gamma)){
       f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
                                x_mat_ord, ord_mat,
                                lam, lam^2, y2, family)
     } else {
       f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
                                x_mat_ord, ord_mat,
-                               lam, lambda2, y2, family)
+                               gamma*lam, (1-gamma)*lam, y2, family)
     }
       temp_res <- sum((f_hat_new[[2]] - f_hat)^2)
       if(temp_res < 1e-30){
@@ -325,9 +293,9 @@ find.lambdamax <- function(y2, x_mat_ord, ord_mat,
   return(lam.max)
 }
 
-sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
+sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-3,
                     initpars = NULL, lambda.max = NULL, lambda.min.ratio = 1e-1,
-                    nlam = 50, family,
+                    nlam = 30, family,
                     initintercept = NULL, step = length(y), alpha = 0.5,
                     gamma.par = NULL) {
   # This function solves the trenfiltering/total variation problem.
@@ -355,10 +323,6 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   ranks <- apply(x, 2, rank)
   x_ord <- apply(x, 2, sort)
 
-  lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
-                 length = nlam)
-  lam.seq <- 10^lam.seq
-
   if(is.null(initpars)) {
     initpars <- matrix(0, ncol = p, nrow = n)
   }
@@ -374,6 +338,13 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
   if(family == "binomial"){
     y[y==0] <- -1
   }
+  if(is.null(lambda.max)){
+    lambda.max <- find.lambdamax(y, x_ord, ord, gamma = gamma.par, family = family)
+  }
+
+  lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
+                 length = nlam)
+  lam.seq <- 10^lam.seq
 
   ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
@@ -399,7 +370,6 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
 
     }
 
-    full.ans[[i]] <- temp
     ans[, , i] <- temp$fhat
     ans.inters[i] <- temp$intercept
 
@@ -412,9 +382,7 @@ sobolev.norm <- function(y, x, max.iter = 100, tol = 1e-4,
               "x" = x,
               "ord" = ord,
               "lam" = lam.seq,
-              "k" = k,
-              "family" = family,
-              "full" = full.ans)
+              "family" = family)
 
   class(obj) <- "sobolev"
   return(obj)

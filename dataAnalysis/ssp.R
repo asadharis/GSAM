@@ -30,8 +30,8 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
     mod <- sobolev.norm(temp.y, temp.x, nlam = nlam,
                         lambda.max = max.lambda,
                         lambda.min.ratio = lam.min.ratio,
-                        max.iter = 1000, family = "binomial", tol = 1e-8,
-                        gamma.par = gamma.par)
+                        max.iter = 500, family = "binomial", tol = 1e-10,
+                        gamma.par = gamma.par, alpha = 0.5, step = length(y.train))
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
@@ -59,16 +59,13 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
   n <- length(y.train)
   cat("Before full model", "\n")
 
-  max.lambda <- 1
-  lam.min.ratio <- 1e-2
-  gamma.par <- NULL
   full.mod <- sobolev.norm(y = y.train, x.train, lambda.max = max.lambda,
                            lambda.min.ratio = lam.min.ratio, max.iter = 500,
-                           tol = 1e-3, gamma.par = gamma.par,step = n, alpha = 0.1,
-                           nlam = 30, family = "binomial")
+                           tol = 1e-10, gamma.par = gamma.par, step = n, alpha = 0.5,
+                           nlam = 50, family = "binomial")
   cat("Full model done", "\n")
 
-  apply(abs(full.mod$f_hat),3,function(x){sum(colSums(x)!=0)})
+  #apply(abs(full.mod$f_hat),3,function(x){sum(colSums(x)!=0)})
 
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
                      nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio,
