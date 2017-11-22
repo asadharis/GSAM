@@ -7,8 +7,11 @@
 #include<math.h>
 #include<vector>
 
+
 using namespace arma;
 using namespace Rcpp;
+using namespace std;
+
 using namespace std;
 
 extern "C"{
@@ -450,4 +453,7 @@ List cpp_spp_one(arma::vec y, arma::mat x_ord,
                       Named("intercept") = as_scalar(new_ans(0)),
                       Named("conv") = converged );
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

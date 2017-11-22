@@ -2,26 +2,26 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 cpp_spline <- function(y_ord, x_ord, lambda, n, n_grid) {
-    .Call('uniSolve_cpp_spline', PACKAGE = 'uniSolve', y_ord, x_ord, lambda, n, n_grid)
+    .Call('_uniSolve_cpp_spline', PACKAGE = 'uniSolve', y_ord, x_ord, lambda, n, n_grid)
 }
 
 cpp_spline_raw <- function(y_ord, x_ord, lambda, n, n_grid) {
-    .Call('uniSolve_cpp_spline_raw', PACKAGE = 'uniSolve', y_ord, x_ord, lambda, n, n_grid)
+    .Call('_uniSolve_cpp_spline_raw', PACKAGE = 'uniSolve', y_ord, x_ord, lambda, n, n_grid)
 }
 
 cpp_temp_func <- function(lambda, y_ord, x_ord, n, n_grid, lambda2) {
-    .Call('uniSolve_cpp_temp_func', PACKAGE = 'uniSolve', lambda, y_ord, x_ord, n, n_grid, lambda2)
+    .Call('_uniSolve_cpp_temp_func', PACKAGE = 'uniSolve', lambda, y_ord, x_ord, n, n_grid, lambda2)
 }
 
 cpp_uniroot <- function(lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol) {
-    .Call('uniSolve_cpp_uniroot', PACKAGE = 'uniSolve', lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol)
+    .Call('_uniSolve_cpp_uniroot', PACKAGE = 'uniSolve', lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol)
 }
 
 cpp_solve_prox <- function(y_ord, x_ord, lambda1, lambda2, n, n_grid) {
-    .Call('uniSolve_cpp_solve_prox', PACKAGE = 'uniSolve', y_ord, x_ord, lambda1, lambda2, n, n_grid)
+    .Call('_uniSolve_cpp_solve_prox', PACKAGE = 'uniSolve', y_ord, x_ord, lambda1, lambda2, n, n_grid)
 }
 
 cpp_spp_one <- function(y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter = 100L, tol = 1e-4, step_size = 1, alpha = 0.5) {
-    .Call('uniSolve_cpp_spp_one', PACKAGE = 'uniSolve', y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter, tol, step_size, alpha)
+    .Call('_uniSolve_cpp_spp_one', PACKAGE = 'uniSolve', y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter, tol, step_size, alpha)
 }
 

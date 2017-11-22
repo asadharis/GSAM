@@ -36,8 +36,11 @@ solve.prox.spline <- function(y.ord, x.ord, lambda1, lambda2) {
 
    n <- length(y.ord)
   tempf <- function(lam_x) {
-    obj <- cpp_spline(y.ord, x.ord, lam_x, n, 1000)
-    lam_x*sqrt(get.pen(obj)) - lambda2/2
+    cpp_temp_func(lam_x, y.ord, x.ord,
+                  n, n_grid = 1000, lambda2)
+
+    # obj <- cpp_spline(y.ord, x.ord, lam_x, n, 1000)
+    # lam_x*sqrt(get.pen(obj)) - lambda2/2
   }
   if(tempf(lambda2*1e+2) < 0) {
     #obj <- spline_s(y, y.ord, x.ord, theta = rep(0, n), lambda2)
