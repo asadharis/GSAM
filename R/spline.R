@@ -24,13 +24,15 @@ solve.prox.spline <- function(y.ord, x.ord, lambda1, lambda2) {
     cpp_temp_func(lam_x, y.ord, x.ord,
                   n, n_grid = 1000, lambda2)
   }
-  if(tempf(lambda2*1e+1) < 0) {
+  if(tempf(lambda2*1e+3) < 0) {
     b1 <- cov(x.ord,y.ord)/var(x.ord)
     b0 <- mean(y.ord) - (b1*mean(x.ord))
     fhat <- b0 + (b1*x.ord)
   } else {
-    lam <- uniroot(tempf, c(lambda2*1e-10,lambda2*1e+2))$root
+    lam <- uniroot(tempf, c(lambda2*1e-10,lambda2*1e+3))$root
+    f_hat <- cpp_spline(y.ord, x.ord, lam, n, 1000)
+    fhat <- f_hat$sy
   }
   # Return final value.
-  max((1 - lambda1/sqrt(mean(fhat^2))), 0)
+  max((1 - lambda1/sqrt(mean(fhat^2))), 0)*fhat
 }

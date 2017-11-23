@@ -96,7 +96,7 @@ GetZ <- function(f_hat, intercept, step_size,
                  x_mat_ord, ord_mat, k,
                  lambda1, lambda2, y,
                  family = "gaussian",
-                 method = "tf") {
+                 method = "tf",...) {
 
   n <- nrow(f_hat)
   p <- ncol(f_hat)
@@ -119,7 +119,8 @@ GetZ <- function(f_hat, intercept, step_size,
       ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y - mean(temp_y),
                                              x_mat_ord[, i],
                                              k = k, lambda1 = lambda1*step_size/n,
-                                             lambda2 = lambda2*step_size/n);
+                                             lambda2 = lambda2*step_size/n,
+                                             ...);
     } else if(method == "sobolev") {
       ans[ord_mat[, i], i] <- solve.prox.spline(temp_y[ord_mat[, i]]- mean(temp_y),
                                                 x_mat_ord[, i], lambda1 = lambda1*step_size/n,
@@ -143,7 +144,7 @@ GetZ <- function(f_hat, intercept, step_size,
 LineSearch <- function(alpha, step_size, y, f_hat, intercept,
                        x_mat_ord, ord_mat, k, lambda1, lambda2,
                        family = "gaussian",
-                       method = "tf") {
+                       method = "tf",...) {
 
   if(family == "binomial") {
     # Logistic Loss
@@ -161,7 +162,7 @@ LineSearch <- function(alpha, step_size, y, f_hat, intercept,
     temp_z <- GetZ(f_hat, intercept, step_size,
                    x_mat_ord, ord_mat, k,
                    lambda1, lambda2, y, family = family,
-                   method = method)
+                   method = method,...)
 
     # Generate the values needed for stopping criteria.
     if(family == "binomial") {

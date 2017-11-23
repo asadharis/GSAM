@@ -34,7 +34,7 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
                          init_fhat, init_intercept, k=0,
                          max_iter = 100, tol = 1e-4,
                          step_size = 1, alpha = 0.5,
-                         family = "gaussian", method = "tf") {
+                         family = "gaussian", method = "tf", ...) {
 
   # Initialize some objects.
   counter <- 1
@@ -49,14 +49,15 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
 
   while(counter < max_iter & !converged) {
     new_ans <- LineSearch(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
-                          x_ord, ord, k, lambda1, lambda2, family, method = method)
+                          x_ord, ord, k, lambda1, lambda2, family,
+                          method = method, ...)
 
     temp_res1 <- mean((new_ans[[2]] - old_ans[[2]])^2) + (new_ans[[1]] - old_ans[[1]])^2
     temp_res2 <- mean((old_ans[[2]])^2) + (old_ans[[1]])^2
 
     # Compare the relative change in parameter values and compare to
     # tolerance to check convergence. Else update iteration.
-    if(temp_res1/temp_res2 <= tol) {
+    if(temp_res1/(temp_res2+1e-30) <= tol) {
       converged <- TRUE
     } else {
       counter <- counter + 1;
@@ -77,7 +78,7 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
 #
 # Args:
 #   y: Response vector of size n.
-#   x_mat: The design matrix of size n*p.
+#   x: The design matrix of size n*p.
 #   ord: A n*p matrix of the ordering for the covariate matrix x.
 #   lambda1, lambda2: Tuning parameters.
 #   init_fhat: Initial value of the estimated functions.
@@ -93,12 +94,12 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
 #   intercept: The estimate of the intercept term, a scalar.
 #   conv: A boolean indicator of convergence status.
 
-blockCoord_one <- function(y, x_mat, ord,init_fhat, k=0,
+blockCoord_one <- function(y, x, ord,init_fhat, k=0,
                            max_iter = 100, tol = 1e-4,
-                           lambda1, lambda2, method = "tf") {
+                           lambda1, lambda2, method = "tf",...) {
 
   n <- length(y)
-  p <- ncol(x_mat)
+  p <- ncol(x)
 
   counter <- 1
   converged <- FALSE
@@ -108,26 +109,28 @@ blockCoord_one <- function(y, x_mat, ord,init_fhat, k=0,
   # Begin loop for block coordinate descent
   while(counter < max_iter & !converged) {
     for(j in 1:p) {
-      res <- y - apply(init_fhat[, -j], 1, sum)
+      res <- y - apply(init_fhat[, -j], 1, sum)- mean(y)
       if(method == "tf") {
         init_fhat[ord[,j], j] <- solve.prox.tf(res[ord[, j]] - mean(res),
                                                x[ord[, j], j],
-                                               k = k, lambda1, lambda2)
+                                               k = k, lambda1, lambda2, ...)
       } else if(method == "sobolev"){
-        init_fhat[ord[,j], j] <- solve.prox.spline(res[ord[,j]] -mean(res),
-                                                   x[, ord[, j], j], lambda1, lambda2)
+        init_fhat[ord[,j], j] <- solve.prox.spline(res[ord[,j]] - mean(res),
+                                                   x[ord[, j], j], lambda1, lambda2)
       }
     }
 
     temp_res1 <- mean((init_fhat - old.fhat)^2)
     temp_res2 <- mean((old.fhat)^2)
 
+    cat("Iteration: ", counter,", Tol:", temp_res1/(temp_res2+1e-30),"\n")
     # Compare the relative change in parameter values and compare to
     # tolerance to check convergence. Else update iteration.
-    if(temp_res1/temp_res2 <= tol) {
+    if(temp_res1/(temp_res2+1e-30) <= tol) {
       converged <- TRUE
     } else {
       old.fhat <- init_fhat
+      counter <- counter+1
     }
   }
   list("fhat" = init_fhat,
@@ -164,7 +167,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
                     nlam = 50, k = 0, family = "binomial",
                     initintercept = NULL, step = 1, alpha = 0.5,
-                    coord.desc = TRUE, method = "tf") {
+                    coord.desc = TRUE, method = "tf", ...) {
 
   # Initialize some values.
   x <- as.matrix(x)
@@ -205,13 +208,13 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
       temp <- blockCoord_one(y, x, ord,init_fhat = initpars,
                              k=k, max_iter = max.iter, tol = tol,
                              lambda1 = lam.seq[i],lambda2 = lam.seq[i]^2,
-                             method = method)
+                             method = method,...)
     } else {
       temp <- proxGrad_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
                      init_fhat = initpars, init_intercept = initintercept,
                      k=k, max_iter = max.iter, tol = tol,
                      step_size = step, alpha = alpha,
-                     family = family, method = method)
+                     family = family, method = method,...)
 
     }
 
@@ -243,7 +246,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
 #   new.data: A new x_matrix which we wish to fit.
 #   type: "function" will return the fitted components f_1,...,f_p.
 
-predict.tf <- function(obj, new.data, type = "function") {
+predict.add_mod <- function(obj, new.data, type = "function") {
   nlam <- length(obj$lam)
   p <- dim(obj$f_hat)[2]
 
