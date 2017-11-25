@@ -44,14 +44,14 @@ cv.spam <- function(x.train, y.train, folds, lam.seq, ...){
 }
 
 simulation.spam <- function(x.train, y.train, x.test, y.test,
-                            folds, nbasis = 3, lambda.min.ratio = 1e-4, ...) {
+                            folds, nbasis = 3, ...) {
   #require(SAM)
   p <- ncol(x.train)
   J <- nbasis
 
   cat("Before full model", "\n")
   full.mod <- samLL(x.train, y.train,
-                    nlambda = 50, lambda.min.ratio = lambda.min.ratio,
+                    nlambda = 50,
                     p = nbasis, ...)
 
   cat("Full model done", "\n")

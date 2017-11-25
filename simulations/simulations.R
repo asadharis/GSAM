@@ -10,9 +10,9 @@ simulation <- function(seed=1, n = 200,
   source('ssp.R')
   source('trendfilter.R')
 
-  # seed=1; n = 200;
-  # num.vars = 6; noise.var = 1;
-  # scen.num <- 1
+  seed=1; n = 200;
+  num.vars = 6; noise.var = 1;
+  scen.num <- 1
 
   if(scen.num == 1){
     scen = scen1
@@ -46,13 +46,7 @@ simulation <- function(seed=1, n = 200,
                      lambda.min.ratio = 1e-3)
   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 1,
                      lambda.min.ratio = 1e-3)
-  # mod.tf.k3 <- SimTF(dat, k = 3, lambda.max = 1,
-  #                    lambda.min.ratio = 1e-3)
 
-  # plot(mod.ssp$mse.true,  log = "y")
-  # lines(mod.tf.k0$mse.true, col = "blue")
-  # lines(mod.tf.k1$mse.true, col = "red")
-  # lines(mod.tf.k2$mse.true, col = "green")
 
   dirname <- paste0("scen", scen.num,"_p", num.vars, "_n", n)
   filename <- paste0(dirname, "/seed", seed, ".RData")

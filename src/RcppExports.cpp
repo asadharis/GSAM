@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // cpp_spline
 List cpp_spline(arma::vec y_ord, arma::vec x_ord, double lambda, int n, int n_grid);
-RcppExport SEXP uniSolve_cpp_spline(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambdaSEXP, SEXP nSEXP, SEXP n_gridSEXP) {
+RcppExport SEXP _uniSolve_cpp_spline(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambdaSEXP, SEXP nSEXP, SEXP n_gridSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // cpp_spline_raw
 arma::vec cpp_spline_raw(arma::vec y_ord, arma::vec x_ord, double lambda, int n, int n_grid);
-RcppExport SEXP uniSolve_cpp_spline_raw(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambdaSEXP, SEXP nSEXP, SEXP n_gridSEXP) {
+RcppExport SEXP _uniSolve_cpp_spline_raw(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambdaSEXP, SEXP nSEXP, SEXP n_gridSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ END_RCPP
 }
 // cpp_temp_func
 double cpp_temp_func(double lambda, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2);
-RcppExport SEXP uniSolve_cpp_temp_func(SEXP lambdaSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP) {
+RcppExport SEXP _uniSolve_cpp_temp_func(SEXP lambdaSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -54,7 +54,7 @@ END_RCPP
 }
 // cpp_uniroot
 double cpp_uniroot(double lambda_min, double lambda_max, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2, double tol);
-RcppExport SEXP uniSolve_cpp_uniroot(SEXP lambda_minSEXP, SEXP lambda_maxSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tolSEXP) {
+RcppExport SEXP _uniSolve_cpp_uniroot(SEXP lambda_minSEXP, SEXP lambda_maxSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,7 +72,7 @@ END_RCPP
 }
 // cpp_solve_prox
 arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord, double lambda1, double lambda2, int n, int n_grid);
-RcppExport SEXP uniSolve_cpp_solve_prox(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP nSEXP, SEXP n_gridSEXP) {
+RcppExport SEXP _uniSolve_cpp_solve_prox(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP nSEXP, SEXP n_gridSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -88,7 +88,7 @@ END_RCPP
 }
 // cpp_spp_one
 List cpp_spp_one(arma::vec y, arma::mat x_ord, arma::umat ord, arma::umat ranks, double lambda1, double lambda2, arma::mat init_fhat, double init_intercept, int n, int p, int max_iter, double tol, double step_size, double alpha);
-RcppExport SEXP uniSolve_cpp_spp_one(SEXP ySEXP, SEXP x_ordSEXP, SEXP ordSEXP, SEXP ranksSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP init_fhatSEXP, SEXP init_interceptSEXP, SEXP nSEXP, SEXP pSEXP, SEXP max_iterSEXP, SEXP tolSEXP, SEXP step_sizeSEXP, SEXP alphaSEXP) {
+RcppExport SEXP _uniSolve_cpp_spp_one(SEXP ySEXP, SEXP x_ordSEXP, SEXP ordSEXP, SEXP ranksSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP init_fhatSEXP, SEXP init_interceptSEXP, SEXP nSEXP, SEXP pSEXP, SEXP max_iterSEXP, SEXP tolSEXP, SEXP step_sizeSEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -112,12 +112,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"uniSolve_cpp_spline", (DL_FUNC) &uniSolve_cpp_spline, 5},
-    {"uniSolve_cpp_spline_raw", (DL_FUNC) &uniSolve_cpp_spline_raw, 5},
-    {"uniSolve_cpp_temp_func", (DL_FUNC) &uniSolve_cpp_temp_func, 6},
-    {"uniSolve_cpp_uniroot", (DL_FUNC) &uniSolve_cpp_uniroot, 8},
-    {"uniSolve_cpp_solve_prox", (DL_FUNC) &uniSolve_cpp_solve_prox, 6},
-    {"uniSolve_cpp_spp_one", (DL_FUNC) &uniSolve_cpp_spp_one, 14},
+    {"_uniSolve_cpp_spline", (DL_FUNC) &_uniSolve_cpp_spline, 5},
+    {"_uniSolve_cpp_spline_raw", (DL_FUNC) &_uniSolve_cpp_spline_raw, 5},
+    {"_uniSolve_cpp_temp_func", (DL_FUNC) &_uniSolve_cpp_temp_func, 6},
+    {"_uniSolve_cpp_uniroot", (DL_FUNC) &_uniSolve_cpp_uniroot, 8},
+    {"_uniSolve_cpp_solve_prox", (DL_FUNC) &_uniSolve_cpp_solve_prox, 6},
+    {"_uniSolve_cpp_spp_one", (DL_FUNC) &_uniSolve_cpp_spp_one, 14},
     {NULL, NULL, 0}
 };
 

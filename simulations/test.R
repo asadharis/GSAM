@@ -7,11 +7,17 @@ x <- runif(n, -2.5,2.5)
 ord <- order(x)
 y <- sin(2*x) + rnorm(n, sd = 0.3)
 
+x <- dat$x[,1]
+y <- dat$y
+ord <- order(x)
 plot(x,y)
-glmgenmod <- glmgen::trendfilter(x, y, k = 3, lambda = 0.1)
-lines(x[ord],glmgenmod$beta, col = "red")
 
+fhat <-solve.prox.spline(y2[ord[,1]], dat$x[ord[,1],1],
+                         fit$lam[32],fit$lam[32]^2)
 
+lines(dat$x[ord[,1],1],fhat, col = "red")
+
+plot(dat$x[ord[,1],1],fhat)
 
 # set.seed(1)
 # x  <- runif(200, -2.5,2.5)

@@ -1,5 +1,6 @@
 
-run.sim <- function(seed = 1) {
+run.sim <- function(seed = 1,nvar = 10) {
+  setwd("~/WORK/uniSolve/dataAnalysis")
   require(uniSolve)
   source("spam.R")
   source("lasso.R")
@@ -11,12 +12,16 @@ run.sim <- function(seed = 1) {
   #dat <- get.data()
   n <- length(dat$y)
 
-  #dat$x <- dat$x[,1:5]
-  #seed <- 1
+  seed <- 2
+  nvar <- 10
+  dat$x <- dat$x[,1:nvar]
+
   # Obtain index for training set.
+  #dat$x <- scale(dat$x)
 
   # We only use the seed value to split the data into training/test.
   set.seed(seed)
+  n <- length(dat$y)
   train <- sample(1:n, floor(n*.75))
   x.train <- as.matrix(dat$x[train,])
   x.test <- as.matrix(dat$x[-train,])
@@ -25,12 +30,12 @@ run.sim <- function(seed = 1) {
 
   # Obtain the cross-validation folds, we keep the same seed for
   # this.
-  folds <- cut(seq(1,nrow(x.train)), breaks=5,labels=FALSE)
+  folds <- cut(seq(1,nrow(x.train)), breaks=2,labels=FALSE)
 
 
   # Lasso Results First
   lasso <- simulation.lasso(x.train, y.train, x.test, y.test, folds,
-                            lambda.min.ratio = 1e-4)
+                            lambda.min.ratio = 1e-3)
 
   # SPAM RESULTS!
 
@@ -47,17 +52,18 @@ run.sim <- function(seed = 1) {
 
   # SSP RESULTS!
   ssp <- simulation.ssp(x.train, y.train, x.test, y.test, folds,
-                        max.lambda = 1, lam.min.ratio = 1e-5)
+                        max.lambda = NULL, lam.min.ratio = 1e-1,
+                        gamma.par = NULL)
 
   # Trend filtering results
   tf0 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=0,
-                       lambda.min.ratio = 1e-5,lambda.max = 1)
+                       lambda.min.ratio = 1e-4,lambda.max = 1)
 
   tf1 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=1,
-                       lambda.min.ratio = 1e-5,lambda.max = 1)
+                       lambda.min.ratio = 1e-4,lambda.max = 1)
 
   tf2 <- simulation.tf(x.train, y.train, x.test, y.test, folds, k=2,
-                       lambda.min.ratio = 1e-5,lambda.max = 1)
+                       lambda.min.ratio = 1e-4,lambda.max = 1)
 
 
   filename <- paste0("ERdata")

@@ -118,7 +118,7 @@ scen2 <- function(x) {
              vals = c(-2.8, 0.3, -1.4, 0.4, 1.8))
   }
 
-  cbind(f1(x[,1]), f2(x[,2]), f3(x[,3]), f4(x[,4]))
+  cbind(f1(x[,1])+0.5, f2(x[,2])-0.5, f3(x[,3]), f4(x[,4])-1)
 }
 
 # Scenario 3: All smooth functions

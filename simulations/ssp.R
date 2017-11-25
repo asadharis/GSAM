@@ -1,23 +1,21 @@
-library(uniSolve)
 
 SimSPLINE <- function(dat, ...) {
-  x <- dat$x
-  y <- dat$y
+  require(uniSolve)
 
-  fit <- sobolev.norm(dat$y, dat$x,  ...)
-  # fit <- sobolev.norm(dat$y, dat$x,  lambda.max = 1,
-  #                     lambda.min.ratio = 1e-3)
+  fit <- fit.additive(y=dat$y, x=dat$x, max.iter = 1000, tol = 1e-6,
+               lambda.max = 3, family="gaussian", method = "sobolev",
+               lambda.min.ratio = 0.0126)
 
   fit.vals <- apply(fit$f_hat, c(1,3),sum)
-  fit.vals <- fit.vals + fit$y.mean
+  fit.vals <- fit.vals + fit$intercept
 
   # Evaluate the MSE_true
   mse.true <- colMeans((fit.vals - dat$f0)^2)
 
   # Find index of best min MSE_test
-  yhat.test <- predict.sobolev(fit, dat$x.test)
+  yhat.test <- predict(fit, dat$x.test)
   yhat.test <- apply(yhat.test, c(1,3),sum)
-  yhat.test <- yhat.test + fit$y.mean
+  yhat.test <- yhat.test + fit$intercept
 
   mse.test <- colMeans((yhat.test - dat$y.test)^2)
   ind <- which.min(mse.test)

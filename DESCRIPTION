@@ -1,12 +1,13 @@
 Package: uniSolve
-Version: 1.0
+Version: 0.2.1
 Date: 2012-04-14
 Title: An example R package
-Author: Bjorn Winckler <bjorn.winckler@gmail.com>
-Maintainer: Bjorn Winckler <bjorn.winckler@gmail.com>
-Depends: R (>= 2.14.1)
-Description: Function to reverse an integer vector.
+Author: Asad Haris <aharis@uw.edu >, Noah Simon, Ali Shojaie
+Maintainer: Asad Haris <aharis@uw.edu>
+Depends: R (>= 3.2.0)
+Description: A package to fit sparse additive models. 
 License: BSD
 Imports:
     Rcpp (>= 0.12.2), Matrix, glmgen
 LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.0.1
