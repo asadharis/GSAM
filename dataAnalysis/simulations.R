@@ -80,9 +80,8 @@ run.sim <- function(seed = 1,nvar = 10) {
 
 args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
-nvar <- as.numeric(args[[2]])
 
-run.sim(seed=seed, nvar)
+run.sim(seed=seed)
 
 
 q(save = "no")
