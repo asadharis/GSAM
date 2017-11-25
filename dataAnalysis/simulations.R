@@ -1,5 +1,5 @@
 
-run.sim <- function(seed = 1,nvar = 10) {
+run.sim <- function(seed = 1) {
   require(uniSolve)
   source("spam.R")
   source("lasso.R")
@@ -11,7 +11,7 @@ run.sim <- function(seed = 1,nvar = 10) {
   #dat <- get.data()
   n <- length(dat$y)
 
-  dat$x <- dat$x[,1:nvar]
+  #dat$x <- dat$x[,1:5]
   #seed <- 1
   # Obtain index for training set.
 
@@ -74,9 +74,8 @@ run.sim <- function(seed = 1,nvar = 10) {
 
 args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
-nvar <- as.numeric(args[[2]])
 
-run.sim(seed=seed, nvar)
+run.sim(seed=seed)
 
 
 q(save = "no")
