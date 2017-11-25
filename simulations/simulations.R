@@ -37,15 +37,16 @@ simulation <- function(seed=1, n = 200,
   mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-4)
   mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-4)
 
+  mod.ssp <- SimSPLINE(dat, lambda.max = 3, lambda.min.ratio = 1e-2,
+                       tol = 1e-5, max.iter = 3000)
 
-  mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-3)
-
-  mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 1,
-                     lambda.min.ratio = 1e-3)
+  mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 3,
+                     lambda.min.ratio = 1e-2, tol = 1e-5, max.iter = 3000)
   mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = 1,
-                     lambda.min.ratio = 1e-3)
+                     lambda.min.ratio = 1e-2, tol = 1e-5, max.iter = 3000)
   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 1,
-                     lambda.min.ratio = 1e-3)
+                     lambda.min.ratio = 1e-3, tol = 1e-5, max.iter = 3000,
+                     control = trendfilter.control.list(obj_tol = 1e-12, max_iter = 600))
 
 
   dirname <- paste0("scen", scen.num,"_p", num.vars, "_n", n)

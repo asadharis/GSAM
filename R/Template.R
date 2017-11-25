@@ -123,7 +123,7 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
     temp_res1 <- mean((init_fhat - old.fhat)^2)
     temp_res2 <- mean((old.fhat)^2)
 
-    cat("Iteration: ", counter,", Tol:", temp_res1/(temp_res2+1e-30),"\n")
+    #cat("Iteration: ", counter,", Tol:", temp_res1/(temp_res2+1e-30),"\n")
     # Compare the relative change in parameter values and compare to
     # tolerance to check convergence. Else update iteration.
     if(temp_res1/(temp_res2+1e-30) <= tol) {

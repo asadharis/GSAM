@@ -1,14 +1,12 @@
 library(SAM)
 
 SimSPAM <- function(dat, p = 3,...) {
-  x <- dat$x
-  y <- dat$y
 
-  fit <- samQL(x, y, p = p, ...)
-  #fit <- samQL(x, y, lambda.min.ratio = 1e-4, nlambda = 50, p  = 3)
+  fit <- samQL(dat$x, dat$y, p = p, ...)
+  #fit <- samQL(dat$x, dat$y, lambda.min.ratio = 1e-4, nlambda = 50, p  = 3)
 
   # Evaluate the MSE_true
-  yhat <- predict.spam(fit, newdata = x)$values
+  yhat <- predict.spam(fit, newdata = dat$x)$values
   mse.true <- colMeans((yhat - dat$f0)^2)
 
   # plot(fit$lambda,mse.true, log = "yx")
@@ -21,9 +19,7 @@ SimSPAM <- function(dat, p = 3,...) {
   # plot(fit$lambda, mse.test, log = "xy")
 
   # Find MSE_val and MSE_TRUE_BEST
-  yhat.val <- predict.spam(fit, dat$x.val)$values
-  mse.val <- colMeans((yhat.val - dat$y.val)^2)[ind]
-  mse.true.best <- colMeans((dat$f0 - yhat)^2)[ind]
+  mse.true.best <- mse.true[ind]
 
   # Find the number of active features in best set.
   active.set <- apply(fit$w, 2, function(vec){
@@ -43,7 +39,6 @@ SimSPAM <- function(dat, p = 3,...) {
 
 
   return(list("mse.true.best" = mse.true.best,
-              "mse.val" = mse.val,
               "mse.true" = mse.true,
               "lam" = fit$lambda,
               "act.set" = active.set,

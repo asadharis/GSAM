@@ -1,34 +1,27 @@
-library(uniSolve)
 
-SimTF <- function(dat, k = 0, ...) {
-  x <- dat$x
-  y <- dat$y
+SimTF <- function(dat, ...) {
+  require(uniSolve)
 
-  fit <- tf.norm(dat$y, dat$x, k = k, ...)
-  # fit <- tf.norm(dat$y, dat$x, k = 0, lambda.max = 1,
-  #                     lambda.min.ratio = 1e-3)
+  fit <- fit.additive(y=dat$y, x=dat$x,
+                      family="gaussian", method = "tf",
+                      ...)
 
   fit.vals <- apply(fit$f_hat, c(1,3),sum)
-  fit.vals <- fit.vals + fit$y.mean
+  fit.vals <- fit.vals + fit$intercept
 
   # Evaluate the MSE_true
   mse.true <- colMeans((fit.vals - dat$f0)^2)
 
   # Find index of best min MSE_test
-  yhat.test <- predict.sobolev(fit, dat$x.test)
+  yhat.test <- predict(fit, dat$x.test)
   yhat.test <- apply(yhat.test, c(1,3),sum)
-  yhat.test <- yhat.test + fit$y.mean
+  yhat.test <- yhat.test + fit$intercept
 
   mse.test <- colMeans((yhat.test - dat$y.test)^2)
   ind <- which.min(mse.test)
 
   # Find MSE_val and MSE_TRUE_BEST
-  yhat.val <- predict.sobolev(fit, dat$x.val)
-  yhat.val <- apply(yhat.val, c(1,3),sum)
-  yhat.val <- yhat.val + fit$y.mean
-
-  mse.val <- mean((yhat.val[, ind] - dat$y.val)^2)
-  mse.true.best <- mean((dat$f0 - fit.vals[, ind])^2)
+  mse.true.best <- mse.true[ind]
 
   # Find the number of active features.
   active.set <- 1*(apply(abs(fit$f_hat), c(2,3), mean)!=0)
@@ -36,8 +29,7 @@ SimTF <- function(dat, k = 0, ...) {
 
   # Find the fitted functions of the best lambda value
   # i.e. the lambda value which minizes the test Error.
-
-  fhat.best <- fit$f_hat[,,ind]
+  fhat.best <- fit$f_hat[, , ind]
 
   xout <- seq(-2.5, 2.5, length = 1000)
   f1 <- approx(dat$x[,1], fhat.best[,1], xout = xout, rule = 2)$y
@@ -47,9 +39,7 @@ SimTF <- function(dat, k = 0, ...) {
 
   fhat.best2 <- cbind(f1,f2,f3,f4)
 
-
   return(list("mse.true.best" = mse.true.best,
-              "mse.val" = mse.val,
               "mse.true" = mse.true,
               "lam" = as.numeric(fit$lam),
               "act.set" = active.set,
