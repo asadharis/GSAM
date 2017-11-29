@@ -10,7 +10,7 @@ simulation <- function(seed=1, n = 200,
   source('ssp.R')
   source('trendfilter.R')
 
-  seed=1; n = 200;
+  seed=1; n = 500;
   num.vars = 6; noise.var = 1;
   scen.num <- 1
 
@@ -36,8 +36,9 @@ simulation <- function(seed=1, n = 200,
   mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-4)
   mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-4)
   mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-4)
+  mod.spam100 <- SimSPAM(dat, p = 100, nlambda = 50, lambda.min.ratio = 5e-4)
 
-  mod.ssp <- SimSPLINE(dat, lambda.max = 3, lambda.min.ratio = 1e-2,
+  mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
                        tol = 1e-5, max.iter = 3000)
 
   mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 3,
@@ -53,12 +54,12 @@ simulation <- function(seed=1, n = 200,
   filename <- paste0(dirname, "/seed", seed, ".RData")
 
   if(dir.exists(dirname)) {
-    save(list = c(paste0("mod.spam", c(3,6,10,20,30,50)),
+    save(list = c(paste0("mod.spam", c(3, 6, 10, 20, 30, 50, 100)),
                   "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   } else {
     dir.create(dirname)
-    save(list = c(paste0("mod.spam", c(3,6,10,20,30,50)),
+    save(list = c(paste0("mod.spam", c(3, 6, 10, 20, 30, 50, 100)),
                   "mod.ssp",
                   paste0("mod.tf.k", 0:2)), file = filename)
   }

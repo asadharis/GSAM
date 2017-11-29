@@ -2,6 +2,10 @@
 SimSPLINE <- function(dat, ...) {
   require(uniSolve)
 
+  # fit <- fit.additive(y=dat$y, x=dat$x,
+  #                     family="gaussian", method = "sobolev",
+  #                     lambda.max = 3, lambda.min.ratio = 1e-2,
+  #                     tol = 1e-5, max.iter = 3000)
   fit <- fit.additive(y=dat$y, x=dat$x,
                       family="gaussian", method = "sobolev",
                       ...)
@@ -36,6 +40,8 @@ SimSPLINE <- function(dat, ...) {
   f2 <- approx(dat$x[,2], fhat.best[,2], xout = xout, rule = 2)$y
   f3 <- approx(dat$x[,3], fhat.best[,3], xout = xout, rule = 2)$y
   f4 <- approx(dat$x[,4], fhat.best[,4], xout = xout, rule = 2)$y
+
+  #plot(xout,f4)
 
   fhat.best2 <- cbind(f1,f2,f3,f4)
 

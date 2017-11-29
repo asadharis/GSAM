@@ -1,38 +1,38 @@
+library(uniSolve)
+source('Generate_Data.R')
+source('Models.R')
 
-library(glmgen)
+seed=1; n = 500;
+num.vars = 6; noise.var = 1;
+scen.num <- 1
+scen = scen1
+dat <- GenerateData(seed = seed, n = n, p = num.vars,
+                    noise.var = noise.var, scenario = scen)
+fit <- fit.additive(y=dat$y, x=dat$x,
+                    family="gaussian", method = "sobolev",
+                    lambda.max = 0.5, lambda.min.ratio = 1e-4,
+                    tol = 5e-5, max.iter = 3000, coord.desc = TRUE)
+fit.vals <- apply(fit$f_hat, c(1,3),sum)
+fit.vals <- fit.vals + fit$intercept
 
-set.seed(1)
-n = 300
-x <- runif(n, -2.5,2.5)
-ord <- order(x)
-y <- sin(2*x) + rnorm(n, sd = 0.3)
+# Evaluate the MSE_true
+mse.true <- colMeans((fit.vals - dat$f0)^2)
+plot(mse.true, log = "y")
+xout <- seq(-2.5,2.5,length = 500)
+xnew <- cbind(xout,xout,xout,xout,xout,xout)
+fhat <- predict(fit, xnew)[,,14]
+plot(xnew[,4], fhat[,4], type = "l")
 
-x <- dat$x[,1]
-y <- dat$y
-ord <- order(x)
-plot(x,y)
+#############################
 
-fhat <-solve.prox.spline(y2[ord[,1]], dat$x[ord[,1],1],
-                         fit$lam[32],fit$lam[32]^2)
+fit2 <- blockCoord_one(dat$y, dat$x, apply(dat$x,2,order),
+                       init_fhat = fit$f_hat[,,45], k=0,
+                       max_iter = 3000, tol = 1e-5,
+                        fit$lam[46], fit$lam[46]^2, method = "sobolev")
 
-lines(dat$x[ord[,1],1],fhat, col = "red")
-
-plot(dat$x[ord[,1],1],fhat)
-
-# set.seed(1)
-# x  <- runif(200, -2.5,2.5)
-# y  <- sin(2*x) + rnorm(200, sd = 0.3)
-# x <- cbind(x, runif(200, -2.5,2.5),runif(200, -2.5,2.5),runif(200, -2.5,2.5))
-# y.mean <- mean(y)
-# x.mean <- apply(x,2,mean)
-# ord <- apply(x,2,order)
-# y <- y-mean(y)
-# x <- scale(x, scale = FALSE)
-# max.iter <- 100
-# tol <- 1e-4
-# initpars <- NULL; lambda1 <- 0.03;
-# lambda2 <- lambda1^2
-#
-# a <- spline_s(y,y[ord[,1]],x[ord[,1],1], rep(0,200), 0.001)
-# plot(x[,1],y)
-# lines(a$x, a$sy)
+fit3 <- proxGrad_one(dat$y, apply(dat$x,2,sort), apply(dat$x,2,order),
+                     fit$lam[46], fit$lam[46]^2, init_fhat=fit$f_hat[,,45],
+                     init_intercept = fit$intercept[45],
+                     k=0,max_iter = 1000, tol = 1e-5,
+                     step_size = 500, alpha = 0.5,
+                     family = "gaussian", method = "sobolev")

@@ -166,7 +166,7 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
                     nlam = 50, k = 0, family = "binomial",
-                    initintercept = NULL, step = 1, alpha = 0.5,
+                    initintercept = NULL, step = length(y), alpha = 0.5,
                     coord.desc = TRUE, method = "tf", ...) {
 
   # Initialize some values.
@@ -201,6 +201,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
 
   ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
+  conv.vec <- c()
 
   for(i in 1:nlam) {
     #cat("Lambda value: ", i, "\n")
@@ -210,6 +211,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                              lambda1 = lam.seq[i],lambda2 = lam.seq[i]^2,
                              method = method,...)
     } else {
+      print(i)
       temp <- proxGrad_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
                      init_fhat = initpars, init_intercept = initintercept,
                      k=k, max_iter = max.iter, tol = tol,
@@ -223,6 +225,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
 
     initintercept <- ans.inters[i]
     initpars <- ans[, , i]
+    conv.vec <- c(conv.vec, temp$conv)
   }
 
   obj <- list("f_hat" = ans,
@@ -231,7 +234,8 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
               "ord" = ord,
               "lam" = lam.seq,
               "k" = k,
-              "family" = family)
+              "family" = family,
+              "conv" = conv.vec)
 
   class(obj) <- "add_mod"
   return(obj)

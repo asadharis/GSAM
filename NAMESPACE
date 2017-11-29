@@ -7,3 +7,4 @@ S3method(predict, add_mod)
 
 export(solve.prox.spline)
 export(blockCoord_one)
+export(proxGrad_one)
