@@ -12,13 +12,13 @@ SimSPAM <- function(dat, p = 3,...) {
   # plot(fit$lambda,mse.true, log = "yx")
 
   # Find index of best min MSE_test
-  yhat.test <- predict.spam(fit, dat$x.test)$values
-  mse.test <- colMeans((yhat.test - dat$y.test)^2)
-  ind <- which.min(mse.test)
+  # yhat.test <- predict.spam(fit, dat$x.test)$values
+  # mse.test <- colMeans((yhat.test - dat$y.test)^2)
 
-  # plot(fit$lambda, mse.test, log = "xy")
+  # Find the index which minimizes the MSE
+  ind <- which.min(mse.true)
 
-  # Find MSE_val and MSE_TRUE_BEST
+  # Find  MSE_TRUE_BEST
   mse.true.best <- mse.true[ind]
 
   # Find the number of active features in best set.

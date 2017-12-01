@@ -13,14 +13,16 @@ SimTF <- function(dat, ...) {
   mse.true <- colMeans((fit.vals - dat$f0)^2)
 
   # Find index of best min MSE_test
-  yhat.test <- predict(fit, dat$x.test)
-  yhat.test <- apply(yhat.test, c(1,3),sum)
-  yhat.test <- yhat.test + fit$intercept
+  # yhat.test <- predict(fit, dat$x.test)
+  # yhat.test <- apply(yhat.test, c(1,3),sum)
+  # yhat.test <- yhat.test + fit$intercept
+  #
+  # mse.test <- colMeans((yhat.test - dat$y.test)^2)
 
-  mse.test <- colMeans((yhat.test - dat$y.test)^2)
-  ind <- which.min(mse.test)
+  # Find the index which minimizes the MSE
+  ind <- which.min(mse.true)
 
-  # Find MSE_val and MSE_TRUE_BEST
+  # Find  MSE_TRUE_BEST
   mse.true.best <- mse.true[ind]
 
   # Find the number of active features.
