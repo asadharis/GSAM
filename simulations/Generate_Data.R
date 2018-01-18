@@ -22,6 +22,7 @@ GenerateData <- function(n = 150, p = 4, noise.var = 1, seed = 1,
   #scenario = scen5
   # Generate a fixed deign matrix
   x.seed <- seed %% 50
+  #x.seed <- 1
   set.seed(x.seed)
   x <- matrix(runif(n * p, min = -2.5, 2.5), ncol = p, nrow = n)
   y.no.noise <- rowSums(scenario(x[, 1:4]))  # Function values at points x.

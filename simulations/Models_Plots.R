@@ -12,7 +12,8 @@ mydat <- data.frame("x" = rep(xs, 4),
 ggplot(mydat, aes(x = x, y = f, col = Function)) +
   geom_line(size = 1.3) + ylab("f(x)") +
   ggtitle("Scenario 1: All Step Functions") + guides(color = FALSE) +
-  theme(text = element_text(size = 20), title = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
 
 # We begin with scenario 2
@@ -26,7 +27,8 @@ mydat <- data.frame("x" = rep(xs, 4),
 ggplot(mydat, aes(x = x, y = f, col = Function)) +
   geom_line(size = 1.3) + ylab("f(x)") +
   ggtitle("Scenario 2: All Piecewise Linear Functions")+ guides(color = FALSE)+
-  theme(text = element_text(size = 20), title = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
 # We for scenario 3: The very similar to SPAM
 # All functions are smooth.
@@ -39,7 +41,8 @@ mydat <- data.frame("x" = rep(xs, 4),
 ggplot(mydat, aes(x = x, y = f, col = Function)) +
   geom_line(size = 1.3) + ylab("f(x)") +
   ggtitle("Scenario 3: All Smooth Functions") + guides(color = FALSE)+
-  theme(text = element_text(size = 20), title = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
 
 # For scenario 4
@@ -53,7 +56,8 @@ mydat <- data.frame("x" = rep(xs, 4),
 ggplot(mydat, aes(x = x, y = f, col = Function)) +
   geom_line(size = 1.3) + ylab("f(x)") +
   ggtitle("Scenario 4: Mixture of Functions")+ guides(color = FALSE)+
-  theme(text = element_text(size = 20), title = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
 
 # For scenario 5
@@ -67,5 +71,6 @@ mydat <- data.frame("x" = rep(xs, 4),
 ggplot(mydat, aes(x = x, y = f, col = Function)) +
   geom_line(size = 1.3) + ylab("f(x)") +
   ggtitle("Scenario 5: Hills Type Functions")+ guides(color = FALSE)+
-  theme(text = element_text(size = 20), title = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 

@@ -64,7 +64,6 @@ func.hills <- function(x, split = 0, vals = c(1, 1, 10),
   ans
 }
 
-
 # Scenario 1: All piecewise constant
 scen1 <- function(x) {
   # x: A n*4 matrix for the 4 non-zero functions
@@ -78,21 +77,19 @@ scen1 <- function(x) {
     func.step(x, knots = sort(kts),
               vals)
   }
-
+  
   f3 <- function(x){
     func.step(x, knots = c(-1.5, 0.5),
               vals = c(-3.3, 2.5, -1))
   }
-
+  
   f4 <- function(x){
     func.step(x, knots = c(-1.7, -0.4, 1.5, 1.9),
               vals = c(-2.8, 0.3, -1.4, 0.4, 1.8))
   }
-
+  
   cbind(f1(x[,1]), f2(x[,2]), f3(x[,3]), f4(x[,4]))
 }
-
-
 
 # Scenario 2: All piecewise linear
 scen2 <- function(x) {

@@ -29,24 +29,23 @@ simulation <- function(seed=1, n = 100,
   dat <- GenerateData(seed = seed, n = n, p = num.vars,
                       noise.var = noise.var, scenario = scen)
 
-  mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam6<- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-4)
-  mod.spam80 <- SimSPAM(dat, p = 80, nlambda = 50, lambda.min.ratio = 5e-4)
+  mod.spam3 <- SimSPAM(dat, p = 3, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam6 <- SimSPAM(dat, p = 6, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam10 <- SimSPAM(dat, p = 10, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam20 <- SimSPAM(dat, p = 20, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam30 <- SimSPAM(dat, p = 30, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam50 <- SimSPAM(dat, p = 50, nlambda = 50, lambda.min.ratio = 5e-5)
+  mod.spam80 <- SimSPAM(dat, p = 80, nlambda = 50, lambda.min.ratio = 5e-5)
 
   mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
-                       tol = 1e-4, max.iter = 3000)
+                       tol = 1e-4, max.iter = 300)
 
   mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 2,
-                     lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 3000)
+                     lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
   mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = 1,
-                     lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 3000)
-  mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 1,
-                     lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 3000)
-                     #control = trendfilter.control.list(obj_tol = 1e-12, max_iter = 600))
+                     lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
+  mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 0.1,
+                       lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
 
   dirname <- paste0("scen", scen.num,"_p", num.vars,"_n",n)
   filename <- paste0(dirname, "/",seed, ".RData")

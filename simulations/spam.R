@@ -12,11 +12,11 @@ SimSPAM <- function(dat, p = 3,...) {
   # plot(fit$lambda,mse.true, log = "yx")
 
   # Find index of best min MSE_test
-  # yhat.test <- predict.spam(fit, dat$x.test)$values
-  # mse.test <- colMeans((yhat.test - dat$y.test)^2)
+  yhat.test <- predict.spam(fit, dat$x.test)$values
+  mse.test <- colMeans((yhat.test - dat$y.test)^2)
 
   # Find the index which minimizes the MSE
-  ind <- which.min(mse.true)
+  ind <- which.min(mse.test)
 
   # Find  MSE_TRUE_BEST
   mse.true.best <- mse.true[ind]
