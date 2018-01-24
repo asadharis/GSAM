@@ -25,13 +25,13 @@ cv.lasso <- function(x.train, y.train, folds, lam.seq, ...){
     xbar <- attributes(temp.x)$'scaled:center'
     x.sd <- attributes(temp.x)$'scaled:scale'
 
-    mod <- glmnet(temp.x, temp.y, family = "binomial",
+    mod <- glmnet(temp.x, temp.y, family = "gaussian",
                   lambda = lam.seq , ...)
 
     temp.new.x <- scale(x.train, center = xbar, scale = x.sd)
 
     preds <- predict(mod, newx = temp.new.x, type = "response")[-temp.ind, ]
-    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
+    pred.errors[i, ] <- apply((preds - temp.new.y)^2, 2, mean)
   }
 
   mu.err <- apply(pred.errors, 2, mean)
@@ -49,7 +49,7 @@ simulation.lasso <- function(x.train, y.train, x.test, y.test,
   n <- nrow(x.train)
 
   cat("Before full model", "\n")
-  full.mod <- glmnet(x.train, y.train, family = "binomial",
+  full.mod <- glmnet(x.train, y.train, family = "gaussian",
                      nlambda = 50, lambda.min.ratio = lambda.min.ratio)
   cat("Full model done", "\n")
 
@@ -65,7 +65,7 @@ simulation.lasso <- function(x.train, y.train, x.test, y.test,
     ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
                        cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
   preds <- predict(full.mod, newx = x.test, type = "response")
-  ans <- apply((round(preds[, c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
+  ans <- apply((preds[, c(ind.min, ind.1se)] - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   betas <- full.mod$beta[, c(ind.min, ind.1se)]
@@ -93,6 +93,7 @@ simulation.lasso <- function(x.train, y.train, x.test, y.test,
   return(list("err" = ans, "sparse" = act.set,
               "lam.val" = lam.val,
               "min.plot" = min.plot,
-              "onese.plot" = onese.plot))
+              "onese.plot" = onese.plot,
+              "ind" = c(ind.min, ind.1se)))
 }
 

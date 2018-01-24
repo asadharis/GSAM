@@ -6,5 +6,7 @@ export(fit.additive)
 S3method(predict, add_mod)
 
 export(solve.prox.spline)
+
+export(solve.prox.tf)
 export(blockCoord_one)
 export(proxGrad_one)

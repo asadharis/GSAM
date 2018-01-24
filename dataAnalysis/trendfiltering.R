@@ -27,16 +27,16 @@ cv.tf <- function(x.train, y.train, folds, nlam = 30,
     xbar <- attributes(temp.x)$'scaled:center'
     x.sd <- attributes(temp.x)$'scaled:scale'
 
-    mod <- tf.norm(temp.y, temp.x, nlam = nlam,
-                   lambda.max = max.lambda,
-                   lambda.min.ratio = lam.min.ratio,
-                   max.iter = 1000, k=k, tol = 1e-8)
+    mod <- fit.additive(y=temp.y, x=temp.x,
+                        family="gaussian", method = "tf",k=k,
+                        lambda.max = max.lambda, lambda.min.ratio = lam.min.ratio,
+                        max.iter = 100)
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
     preds <- predict(mod, new.data = temp.new.x, type = "response")
     #preds <- apply(preds, c(1,3),sum) + mod$y.mean
-    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
+    pred.errors[i, ] <- apply((preds - temp.new.y)^2, 2, mean)
 
   }
 
@@ -52,18 +52,22 @@ cv.tf <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.tf <- function(x.train, y.train, x.test, y.test,
-                          folds, k = 1, lambda.max = 1, lambda.min.ratio = 1e-3, ...) {
+                          folds, k = 1, max.lambda = 1,
+                          lam.min.ratio = 1e-3, ...) {
   require(uniSolve)
   p <- ncol(x.train)
   cat("Before full model", "\n")
 
-  full.mod <- tf.norm(y.train, x.train, max.iter = 1000, lambda.max = lambda.max,
-                      lambda.min.ratio = lambda.min.ratio, nlam = 50, k = k,
-                      tol = 1e-8)
+  full.mod <- fit.additive(y=y.train, x=x.train,
+                           family="gaussian", method = "tf",
+                           lambda.max = max.lambda,
+                           lambda.min.ratio = lam.min.ratio,
+                           max.iter = 100,
+                           k=k)
 
   cat("Full model done", "\n")
   cv <- cv.tf(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
-               nlam = length(full.mod$lam), lam.min.ratio = lambda.min.ratio,
+               nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio,
                k=k)
   cat("CV done", "\n")
 
@@ -73,7 +77,7 @@ simulation.tf <- function(x.train, y.train, x.test, y.test,
                      cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
   preds <- predict(full.mod, new.data = x.test, type = "response")
   #preds.fhat <- apply(round(preds), c(1,3),sum) + full.mod$y.mean
-  ans <- apply(( round(preds[,c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
+  ans <- apply(( preds[,c(ind.min, ind.1se)] - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   betas <- full.mod$f_hat[,,c(ind.min, ind.1se)]
@@ -94,5 +98,6 @@ simulation.tf <- function(x.train, y.train, x.test, y.test,
   return(list("err" = ans, "sparse" = act.set,
               "lam.val" = lam.val,
               "min.plot" = min.plot,
-              "onese.plot" = onese.plot))
+              "onese.plot" = onese.plot,
+              "ind" = c(ind.min, ind.1se)))
 }

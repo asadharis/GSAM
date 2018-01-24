@@ -126,6 +126,7 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
     #cat("Iteration: ", counter,", Tol:", temp_res1/(temp_res2+1e-30),"\n")
     # Compare the relative change in parameter values and compare to
     # tolerance to check convergence. Else update iteration.
+
     if(temp_res1/(temp_res2+1e-30) <= tol) {
       converged <- TRUE
     } else {
@@ -211,7 +212,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                              lambda1 = lam.seq[i],lambda2 = lam.seq[i]^2,
                              method = method,...)
     } else {
-      print(i)
+      #print(i)
       temp <- proxGrad_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
                      init_fhat = initpars, init_intercept = initintercept,
                      k=k, max_iter = max.iter, tol = tol,

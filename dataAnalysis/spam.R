@@ -26,12 +26,12 @@ cv.spam <- function(x.train, y.train, folds, lam.seq, ...){
     x.sd <- attributes(temp.x)$'scaled:scale'
 
     #mod <- samLL(temp.x, temp.y, lambda = lam.seq, p=nbasis)
-    mod <- samLL(temp.x, temp.y, lambda = lam.seq, ...)
+    mod <- samQL(temp.x, temp.y, lambda = lam.seq, ...)
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
-    preds <- predict.spam(mod, newdata = temp.new.x)$probs
-    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
+    preds <- predict.spam(mod, newdata = temp.new.x)$values
+    pred.errors[i, ] <- apply((preds - temp.new.y)^2, 2, mean)
   }
 
   mu.err <- apply(pred.errors, 2, mean)
@@ -50,7 +50,7 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   J <- nbasis
 
   cat("Before full model", "\n")
-  full.mod <- samLL(x.train, y.train,
+  full.mod <- samQL(x.train, y.train,
                     nlambda = 50,
                     p = nbasis, ...)
 
@@ -63,8 +63,8 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   ind.min <- which.min(cv$mu)[1]
   ind.1se <- which(cv$mu[ind.min]  - cv$se[ind.min] <= cv$mu &
           cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
-  preds <- predict.spam(full.mod, newdata = x.test)$probs
-  ans <- apply( (round(preds[, c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
+  preds <- predict.spam(full.mod, newdata = x.test)$values
+  ans <- apply( (preds[, c(ind.min, ind.1se)] - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   # Then we obtain the active set indices.
@@ -106,7 +106,9 @@ simulation.spam <- function(x.train, y.train, x.test, y.test,
   return(list("err" = ans, "sparse" = act.set,
               "lam.val" = lam.val,
               "min.plot" = list("yhat" = min.yhat, "xmat" = min.xmat),
-              "onese.plot" = list("yhat" = onese.yhat, "xmat" = onese.xmat)
+              "onese.plot" = list("yhat" = onese.yhat,
+                                  "xmat" = onese.xmat),
+              "ind" = c(ind.min, ind.1se)
               ))
 }
 
@@ -166,9 +168,7 @@ predict.spam = function (object, newdata, thol = 0.5) {
     Zt[, tmp] = ns(newdata[, j], df = object$p, knots = object$nkots[,j],
                    Boundary.knots = object$Boundary.knots[, j])
   }
-  out$probs = exp(cbind(Zt, rep(1, nt)) %*% object$w)
-  out$probs = out$prob/(1 + out$prob)
-  out$labels = sign(out$values > thol)
+  out$values = cbind(Zt, rep(1, nt)) %*% rbind(object$w, object$intercept)
   rm(Zt, newdata)
   return(out)
 }

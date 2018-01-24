@@ -4,7 +4,7 @@
 
 # First a cross-validation for HierBasis
 cv.ssp <- function(x.train, y.train, folds, nlam = 30,
-                         max.lambda, lam.min.ratio, gamma.par){
+                         max.lambda, lam.min.ratio){
   # We assume that the y.train is coded as (-1,1) for HierBasis.
 
   require(uniSolve)
@@ -27,17 +27,16 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
     xbar <- attributes(temp.x)$'scaled:center'
     x.sd <- attributes(temp.x)$'scaled:scale'
 
-    mod <- sobolev.norm(temp.y, temp.x, nlam = nlam,
-                        lambda.max = max.lambda,
-                        lambda.min.ratio = lam.min.ratio,
-                        max.iter = 500, family = "binomial", tol = 1e-10,
-                        gamma.par = gamma.par, alpha = 0.5, step = length(y.train))
+    mod <- fit.additive(y=temp.y, x=temp.x,
+                        family="gaussian", method = "sobolev",
+                        lambda.max = max.lambda, lambda.min.ratio = lam.min.ratio,
+                        max.iter = 500)
 
     temp.new.x <- scale(x.train[-temp.ind,], center = xbar, scale = x.sd)
 
     preds <- predict(mod, new.data = temp.new.x, type = "response")
     #preds <- apply(preds, c(1,3),sum) + mod$y.mean
-    pred.errors[i, ] <- apply((round(preds) - temp.new.y)^2, 2, mean)
+    pred.errors[i, ] <- apply((preds - temp.new.y)^2, 2, mean)
 
   }
 
@@ -53,23 +52,23 @@ cv.ssp <- function(x.train, y.train, folds, nlam = 30,
 
 
 simulation.ssp <- function(x.train, y.train, x.test, y.test,
-                          folds, max.lambda, lam.min.ratio, gamma.par,...) {
+                          folds, max.lambda, lam.min.ratio) {
   require(uniSolve)
   p <- ncol(x.train)
   n <- length(y.train)
   cat("Before full model", "\n")
 
-  full.mod <- sobolev.norm(y = y.train, x.train, lambda.max = max.lambda,
-                           lambda.min.ratio = lam.min.ratio, max.iter = 500,
-                           tol = 1e-10, gamma.par = gamma.par, step = n, alpha = 0.5,
-                           nlam = 50, family = "binomial")
+  full.mod <- fit.additive(y=y.train, x=x.train,
+                           family="gaussian", method = "sobolev",
+                           lambda.max = max.lambda,
+                           lambda.min.ratio = lam.min.ratio, max.iter = 500)
+
   cat("Full model done", "\n")
 
   #apply(abs(full.mod$f_hat),3,function(x){sum(colSums(x)!=0)})
 
   cv <- cv.ssp(x.train, y.train, folds = folds, max.lambda = full.mod$lam[1],
-                     nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio,
-               gamma.par = gamma.par)
+                     nlam = length(full.mod$lam), lam.min.ratio = lam.min.ratio)
   cat("CV done", "\n")
   # Obtain the minimum CV and one SE lambda
   ind.min <- which.min(cv$mu)[1]
@@ -77,7 +76,7 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
                      cv$mu[ind.min]  + cv$se[ind.min] >= cv$mu)[1]
 
   preds.fhat <- predict(full.mod, new.data = x.test, type = "response")
-  ans <- apply((round(preds.fhat[,c(ind.min, ind.1se)]) - y.test)^2, 2, mean)
+  ans <- apply( (preds.fhat[,c(ind.min, ind.1se)] - y.test)^2, 2, mean)
   names(ans) <- c("min", "onese")
 
   betas <- full.mod$f_hat[,,c(ind.min, ind.1se)]
@@ -98,5 +97,6 @@ simulation.ssp <- function(x.train, y.train, x.test, y.test,
   return(list("err" = ans, "sparse" = act.set,
               "lam.val" = lam.val,
               "min.plot" = min.plot,
-              "onese.plot" = onese.plot))
+              "onese.plot" = onese.plot,
+              "ind" = c(ind.min, ind.1se)))
 }
