@@ -52,6 +52,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_temp_func2
+double cpp_temp_func2(double lambda, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2);
+RcppExport SEXP _uniSolve_cpp_temp_func2(SEXP lambdaSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type y_ord(y_ordSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type x_ord(x_ordSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type n_grid(n_gridSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_temp_func2(lambda, y_ord, x_ord, n, n_grid, lambda2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_uniroot
 double cpp_uniroot(double lambda_min, double lambda_max, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2, double tol);
 RcppExport SEXP _uniSolve_cpp_uniroot(SEXP lambda_minSEXP, SEXP lambda_maxSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tolSEXP) {
@@ -115,6 +131,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_uniSolve_cpp_spline", (DL_FUNC) &_uniSolve_cpp_spline, 5},
     {"_uniSolve_cpp_spline_raw", (DL_FUNC) &_uniSolve_cpp_spline_raw, 5},
     {"_uniSolve_cpp_temp_func", (DL_FUNC) &_uniSolve_cpp_temp_func, 6},
+    {"_uniSolve_cpp_temp_func2", (DL_FUNC) &_uniSolve_cpp_temp_func2, 6},
     {"_uniSolve_cpp_uniroot", (DL_FUNC) &_uniSolve_cpp_uniroot, 8},
     {"_uniSolve_cpp_solve_prox", (DL_FUNC) &_uniSolve_cpp_solve_prox, 6},
     {"_uniSolve_cpp_spp_one", (DL_FUNC) &_uniSolve_cpp_spp_one, 14},

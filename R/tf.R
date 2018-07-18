@@ -1,13 +1,6 @@
 
 library(glmgen)
 
-###############################################################
-#
-# This file consists of a proximal gradient descent algorithm
-# implementation for the trend-filtering problem.
-#
-###############################################################
-
 # A function for the proximal operator which solves:
 #
 # minimize (1/2n) sum(i=1,n) [ y(i) - f(x(i)) ]**2 + (lambda1)*||f|| +(lambda2)*TV(f)

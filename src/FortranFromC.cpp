@@ -153,6 +153,28 @@ double cpp_temp_func(double lambda, arma::vec y_ord, arma::vec x_ord,
 }
 
 // [[Rcpp::export]]
+double cpp_temp_func2(double lambda, arma::vec y_ord, arma::vec x_ord,
+                     int n, int n_grid, double lambda2) {
+
+  vec theta(n, fill::zeros);
+  vec yg(n_grid, fill::zeros);
+  vec xg(n_grid, fill::zeros);
+
+  int iderv = 2;
+
+  callSS_Fortran(y_ord.memptr(), x_ord.memptr(),
+                 theta.memptr(), &lambda, &n,
+                 yg.memptr(), xg.memptr(), &n_grid, &iderv);
+
+  double diff = xg.max() - xg.min();
+  mat ans(1,1);
+  ans(0,0) = accu(square(yg.head(n_grid - 1)) * diff/(n_grid + 1));
+
+  return as_scalar(sqrt(ans));
+}
+
+
+// [[Rcpp::export]]
 double cpp_uniroot(double lambda_min, double lambda_max,
                    arma::vec y_ord, arma::vec x_ord,
                    int n, int n_grid, double lambda2,

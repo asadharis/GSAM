@@ -13,6 +13,10 @@ cpp_temp_func <- function(lambda, y_ord, x_ord, n, n_grid, lambda2) {
     .Call('_uniSolve_cpp_temp_func', PACKAGE = 'uniSolve', lambda, y_ord, x_ord, n, n_grid, lambda2)
 }
 
+cpp_temp_func2 <- function(lambda, y_ord, x_ord, n, n_grid, lambda2) {
+    .Call('_uniSolve_cpp_temp_func2', PACKAGE = 'uniSolve', lambda, y_ord, x_ord, n, n_grid, lambda2)
+}
+
 cpp_uniroot <- function(lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol) {
     .Call('_uniSolve_cpp_uniroot', PACKAGE = 'uniSolve', lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol)
 }
