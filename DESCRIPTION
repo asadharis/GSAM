@@ -1,7 +1,7 @@
-Package: PGSAME
-Version: 0.2.5
-Date: 2012-04-14
-Title: Penalized Generalized Sparse Additive Model Estimators
+Package: GSAM
+Version: 0.3.0
+Date: 2018-09-05
+Title: Generalized Sparse Additive Models
 Author: Asad Haris <aharis@uw.edu >, Noah Simon, Ali Shojaie
 Maintainer: Asad Haris <aharis@uw.edu>
 Depends: R (>= 3.2.0)
