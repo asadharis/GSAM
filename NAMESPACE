@@ -1,4 +1,4 @@
-useDynLib(uniSolve)
+useDynLib(GSAM)
 
 importFrom(Rcpp, evalCpp)
 

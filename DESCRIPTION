@@ -1,5 +1,5 @@
 Package: GSAM
-Version: 0.3.0
+Version: 0.3.2
 Date: 2018-09-05
 Title: Generalized Sparse Additive Models
 Author: Asad Haris <aharis@uw.edu >, Noah Simon, Ali Shojaie
@@ -9,5 +9,6 @@ Description: A package to fit sparse additive models.
 License: GPL-2
 Imports:
     Rcpp (>= 0.12.2), Matrix, glmgen
+Remotes: asadharis/glmgen
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
