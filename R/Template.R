@@ -154,6 +154,8 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 #   lambda.max: maximum lambda value
 #   lambda.min.ratio: Ratio between largest and smallest lambda value.
 #   nlam: Number of lambda values.
+#   zeta: If NULL (default) the lambda_1 = lambda and lambda2 = lambda^2. Otherwise
+#         a double in [0,1] so that lambda_1 = zeta*lambda and lambda_2 = (1-zeta)*lambda.
 #   k: Order of trend-filter
 #   family: "Gaussian" for least squares norm, and "binomial" for logistic loss.
 #   ininitintercept: Initial value for the intercept term.
@@ -166,7 +168,8 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 
 fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
-                    nlam = 50, k = 0, family = "binomial",
+                    nlam = 50, zeta = NULL,
+                    k = 0, family = "binomial",
                     initintercept = NULL, step = length(y), alpha = 0.5,
                     coord.desc = TRUE, method = "tf", ...) {
 
@@ -183,6 +186,17 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
                  length = nlam)
   lam.seq <- 10^lam.seq
+
+  if(is.null(zeta)) {
+    lam1.seq <- lam.seq
+    lam2.seq <- lam.seq^2
+  } else {
+    if(zeta > 1 | zeta < 0) {
+      stop("zeta must be within [0,1]")
+    }
+    lam1.seq <- lam.seq * zeta
+    lam2.seq <- lam.seq * (1 - zeta)
+  }
 
   if(is.null(initpars)) {
     initpars <- matrix(0, ncol = p, nrow = n)
@@ -209,11 +223,11 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     if(family=="gaussian" & coord.desc) {
       temp <- blockCoord_one(y, x, ord,init_fhat = initpars,
                              k=k, max_iter = max.iter, tol = tol,
-                             lambda1 = lam.seq[i],lambda2 = lam.seq[i]^2,
+                             lambda1 = lam1.seq[i],lambda2 = lam2.seq[i],
                              method = method,...)
     } else {
       #print(i)
-      temp <- proxGrad_one(y, x_ord, ord, lam.seq[i], lam.seq[i]^2,
+      temp <- proxGrad_one(y, x_ord, ord, lam1.seq[i], lam2.seq[i],
                      init_fhat = initpars, init_intercept = initintercept,
                      k=k, max_iter = max.iter, tol = tol,
                      step_size = step, alpha = alpha,

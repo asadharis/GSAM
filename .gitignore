@@ -2,6 +2,9 @@ src/*.o
 src/*.so
 src/*.dll
 
+# Simulation Output Files
+
+
 # History files
 .Rhistory
 .Rapp.history

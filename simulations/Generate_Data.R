@@ -20,7 +20,7 @@ GenerateData <- function(n = 150, p = 4, noise.var = 1, seed = 1,
 
   #n = 50; p = 6; SNR = 10; seed = 1
   #scenario = scen5
-  # Generate a fixed deign matrix
+  # Generate a fixed design matrix
   x.seed <- seed %% 50
   #x.seed <- 1
   set.seed(x.seed)
