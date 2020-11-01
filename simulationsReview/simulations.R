@@ -56,10 +56,16 @@ simulation <- function(seed=1, n = 100,
 
 args <-  commandArgs(T)
 seed <- as.numeric(args[[1]])
+print(seed)
 n <- as.numeric(args[[2]])
+print(n)
 num.vars <- as.numeric(args[[3]])
+print(num.vars)
 noise.var <- as.numeric(args[[4]])
+print(noise.var)
 scen.num <- as.numeric(args[[5]])
+
+
 
 library(glmgen)
 library(GSAM)
