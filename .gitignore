@@ -3,7 +3,7 @@ src/*.so
 src/*.dll
 
 # Simulation Output Files
-
+*/p*/
 
 # History files
 .Rhistory

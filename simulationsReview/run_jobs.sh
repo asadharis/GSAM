@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --array=1-100
-#SBATCH --time=00:30:00           # time (HH:MM:SS)
-#SBATCH --mem=500M
+#SBATCH --time=24:59:00           # time (HH:MM:SS)
+#SBATCH --mem=1G
 #SBATCH --error=/dev/null
 #SBATCH --output=/dev/null
 #SBATCH --mail-user=asad.haris5862@gmail.com # Send email updates to you or someone else

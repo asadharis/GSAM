@@ -76,10 +76,10 @@ Type 'q()' to quit R.
 > args <-  commandArgs(T)
 > seed <- as.numeric(args[[1]])
 > print(seed)
-[1] 74
+[1] 30
 > n <- as.numeric(args[[2]])
 > print(n)
-[1] 500
+[1] 1000
 > num.vars <- as.numeric(args[[3]])
 > print(num.vars)
 [1] 100
@@ -90,8 +90,7 @@ Type 'q()' to quit R.
 > 
 > 
 > 
-> library(glmgen)
-> library(GSAM)
+> library(glmgen)>> library(GSAM)
 > source('Generate_Data.R')
 > source('Models.R')
 > source('spam.R')
@@ -99,9 +98,9 @@ Loading required package: splines
 > source('ssp.R')
 > source('trendfilter.R')
 > 
-> simulation(seed, n, num.vars, noise.var, scen.num)>> 
+> simulation(seed, n, num.vars, noise.var, scen.num>> 
 > q(save = "no")
 > proc.time()
-    user   system  elapsed 
-1478.553    1.537 1782.304 
+     user    system   elapsed 
+21297.760    48.541 21477.157 
 
