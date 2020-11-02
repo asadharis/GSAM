@@ -34,7 +34,7 @@ SimSPLINE <- function(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
   mse.zeta <- numeric(zeta.len)
   zeta.seq <- seq(1e-3, 1-1e-3, length = zeta.len)
   for(i in 1:zeta.len) {
-    #print(i)
+    print(i)
     mse.zeta[i] <- oracle.SPLINE(dat,lambda.max = lambda.max,
                              lambda.min.ratio = lambda.min.ratio,
                              tol = tol, zeta = zeta.seq[i],...)
