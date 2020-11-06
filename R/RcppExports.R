@@ -17,12 +17,24 @@ cpp_temp_func2 <- function(lambda, y_ord, x_ord, n, n_grid, lambda2) {
     .Call('_GSAM_cpp_temp_func2', PACKAGE = 'GSAM', lambda, y_ord, x_ord, n, n_grid, lambda2)
 }
 
+cpp_find_lamdaMax <- function(y_ord, x_ord, n, n_grid, lam_old, lambda2) {
+    .Call('_GSAM_cpp_find_lamdaMax', PACKAGE = 'GSAM', y_ord, x_ord, n, n_grid, lam_old, lambda2)
+}
+
+cpp_uniroot3 <- function(a, b, y_ord, x_ord, n, n_grid, lambda2, t) {
+    .Call('_GSAM_cpp_uniroot3', PACKAGE = 'GSAM', a, b, y_ord, x_ord, n, n_grid, lambda2, t)
+}
+
+cpp_uniroot2 <- function(lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol = 1e-10, max_iter = 300L) {
+    .Call('_GSAM_cpp_uniroot2', PACKAGE = 'GSAM', lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol, max_iter)
+}
+
 cpp_uniroot <- function(lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol) {
     .Call('_GSAM_cpp_uniroot', PACKAGE = 'GSAM', lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol)
 }
 
-cpp_solve_prox <- function(y_ord, x_ord, lambda1, lambda2, n, n_grid) {
-    .Call('_GSAM_cpp_solve_prox', PACKAGE = 'GSAM', y_ord, x_ord, lambda1, lambda2, n, n_grid)
+cpp_solve_prox <- function(y_ord, x_ord, lambda1, lambda2, n, n_grid, lam_tilde_old) {
+    .Call('_GSAM_cpp_solve_prox', PACKAGE = 'GSAM', y_ord, x_ord, lambda1, lambda2, n, n_grid, lam_tilde_old)
 }
 
 cpp_spp_one <- function(y, x_ord, ord, ranks, lambda1, lambda2, init_fhat, init_intercept, n, p, max_iter = 100L, tol = 1e-4, step_size = 1, alpha = 0.5) {

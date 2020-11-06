@@ -68,6 +68,59 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_find_lamdaMax
+double cpp_find_lamdaMax(arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lam_old, double lambda2);
+RcppExport SEXP _GSAM_cpp_find_lamdaMax(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lam_oldSEXP, SEXP lambda2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y_ord(y_ordSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type x_ord(x_ordSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type n_grid(n_gridSEXP);
+    Rcpp::traits::input_parameter< double >::type lam_old(lam_oldSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_find_lamdaMax(y_ord, x_ord, n, n_grid, lam_old, lambda2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_uniroot3
+double cpp_uniroot3(double a, double b, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2, double t);
+RcppExport SEXP _GSAM_cpp_uniroot3(SEXP aSEXP, SEXP bSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type y_ord(y_ordSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type x_ord(x_ordSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type n_grid(n_gridSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< double >::type t(tSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_uniroot3(a, b, y_ord, x_ord, n, n_grid, lambda2, t));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_uniroot2
+double cpp_uniroot2(double lambda_min, double lambda_max, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2, double tol, int max_iter);
+RcppExport SEXP _GSAM_cpp_uniroot2(SEXP lambda_minSEXP, SEXP lambda_maxSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tolSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda_min(lambda_minSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda_max(lambda_maxSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type y_ord(y_ordSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type x_ord(x_ordSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type n_grid(n_gridSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_uniroot2(lambda_min, lambda_max, y_ord, x_ord, n, n_grid, lambda2, tol, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_uniroot
 double cpp_uniroot(double lambda_min, double lambda_max, arma::vec y_ord, arma::vec x_ord, int n, int n_grid, double lambda2, double tol);
 RcppExport SEXP _GSAM_cpp_uniroot(SEXP lambda_minSEXP, SEXP lambda_maxSEXP, SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lambda2SEXP, SEXP tolSEXP) {
@@ -87,8 +140,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_solve_prox
-arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord, double lambda1, double lambda2, int n, int n_grid);
-RcppExport SEXP _GSAM_cpp_solve_prox(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP nSEXP, SEXP n_gridSEXP) {
+arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord, double lambda1, double lambda2, int n, int n_grid, double lam_tilde_old);
+RcppExport SEXP _GSAM_cpp_solve_prox(SEXP y_ordSEXP, SEXP x_ordSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP nSEXP, SEXP n_gridSEXP, SEXP lam_tilde_oldSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -98,7 +151,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type n_grid(n_gridSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_solve_prox(y_ord, x_ord, lambda1, lambda2, n, n_grid));
+    Rcpp::traits::input_parameter< double >::type lam_tilde_old(lam_tilde_oldSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_solve_prox(y_ord, x_ord, lambda1, lambda2, n, n_grid, lam_tilde_old));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -132,8 +186,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_GSAM_cpp_spline_raw", (DL_FUNC) &_GSAM_cpp_spline_raw, 5},
     {"_GSAM_cpp_temp_func", (DL_FUNC) &_GSAM_cpp_temp_func, 6},
     {"_GSAM_cpp_temp_func2", (DL_FUNC) &_GSAM_cpp_temp_func2, 6},
+    {"_GSAM_cpp_find_lamdaMax", (DL_FUNC) &_GSAM_cpp_find_lamdaMax, 6},
+    {"_GSAM_cpp_uniroot3", (DL_FUNC) &_GSAM_cpp_uniroot3, 8},
+    {"_GSAM_cpp_uniroot2", (DL_FUNC) &_GSAM_cpp_uniroot2, 9},
     {"_GSAM_cpp_uniroot", (DL_FUNC) &_GSAM_cpp_uniroot, 8},
-    {"_GSAM_cpp_solve_prox", (DL_FUNC) &_GSAM_cpp_solve_prox, 6},
+    {"_GSAM_cpp_solve_prox", (DL_FUNC) &_GSAM_cpp_solve_prox, 7},
     {"_GSAM_cpp_spp_one", (DL_FUNC) &_GSAM_cpp_spp_one, 14},
     {NULL, NULL, 0}
 };

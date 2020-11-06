@@ -37,7 +37,7 @@ solve.prox.tf <- function(y.ord, x.ord, k = 0, lambda1, lambda2, ...) {
   #
   # control = trendfilter.control.list(obj_tol = 1e-12, max_iter = 600)
 
-  # The following procedure is used becaused of the thinning feature
+  # The following procedure is used because of the thinning feature
   # of trendfiltering solver. While this is very useful for making the solver
   # more efficient this can lead to resulting vectors being smaller than n.
   # The if{} block below aims to rectify this issue.

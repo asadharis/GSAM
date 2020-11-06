@@ -130,6 +130,7 @@ GetZ <- function(f_hat, intercept, step_size,
   list(intercept_new, ans)
 }
 
+
 # This function performs the line search algorithm and returns the last
 # update of the parameters of the algorithm.
 #

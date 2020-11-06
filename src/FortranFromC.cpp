@@ -87,7 +87,6 @@ void callSS_Fortran(double *y, double *x, double *sy, double *lambda, int *n_poi
 }
 
 
-
 // [[Rcpp::export]]
 List cpp_spline(arma::vec y_ord, arma::vec  x_ord,
                   double lambda, int n, int n_grid) {
@@ -175,6 +174,236 @@ double cpp_temp_func2(double lambda, arma::vec y_ord, arma::vec x_ord,
 
 
 // [[Rcpp::export]]
+double cpp_find_lamdaMax(arma::vec y_ord, arma::vec x_ord,
+                       int n, int n_grid, double lam_old,
+                       double lambda2) {
+  double zero_num = 0.0;
+  int iderv = 2;
+
+  vec theta(n, fill::zeros);
+  vec yg(n_grid, fill::zeros);
+  vec xg(n_grid, fill::zeros);
+
+  callSS_Fortran(y_ord.memptr(), x_ord.memptr(),
+                 theta.memptr(), &zero_num, &n,
+                 yg.memptr(), xg.memptr(), &n_grid, &iderv);
+  arma::mat integ_trap = arma::trapz(xg, square(yg));
+  double lam_max = as_scalar(integ_trap);
+  double temp;
+  temp = cpp_temp_func(lam_max, y_ord, x_ord,
+                       n,n_grid,lambda2);
+  if(temp < 0) {
+    return -1;
+  }
+
+  if(lambda2 < lam_max) {
+   temp = cpp_temp_func(lambda2, y_ord, x_ord,
+                                n,n_grid,lambda2);
+    if(temp > 0) {
+      //Rcout << "Here in lam2 \n";
+      lam_max = lambda2;
+    }
+  }
+
+  if(lam_old < lam_max) {
+  temp = cpp_temp_func(lam_old, y_ord, x_ord,
+                                n,n_grid,lambda2);
+    if(temp> 0) {
+      //Rcout << "Here in lam_old \n";
+      lam_max = lam_old;
+    }
+  }
+  return lam_max;
+}
+
+
+double r8_epsilon ( ){
+  const double value = 2.220446049250313E-016;
+
+  return value;
+}
+
+
+// [[Rcpp::export]]
+double cpp_uniroot3(double a, double b,
+                    arma::vec y_ord, arma::vec x_ord,
+                    int n, int n_grid, double lambda2,
+                    double t){
+  double c;
+  double d;
+  double e;
+  double fa;
+  double fb;
+  double fc;
+  double m;
+  double macheps;
+  double p;
+  double q;
+  double r;
+  double s;
+  double sa;
+  double sb;
+  double tol;
+  //
+  //  Make local copies of A and B.
+  //
+  sa = a;
+  sb = b;
+  fa = cpp_temp_func(sa, y_ord, x_ord, n, n_grid, lambda2);
+  fb = cpp_temp_func(sb, y_ord, x_ord, n, n_grid, lambda2);
+
+  c = sa;
+  fc = fa;
+  e = sb - sa;
+  d = e;
+
+  macheps = r8_epsilon ( );
+
+  for ( ; ; )
+  {
+    if ( fabs ( fc ) < fabs ( fb ) )
+    {
+      sa = sb;
+      sb = c;
+      c = sa;
+      fa = fb;
+      fb = fc;
+      fc = fa;
+    }
+
+    tol = 2.0 * macheps * fabs ( sb ) + t;
+    m = 0.5 * ( c - sb );
+
+    if ( fabs ( m ) <= tol || fb == 0.0 )
+    {
+      break;
+    }
+
+    if ( fabs ( e ) < tol || fabs ( fa ) <= fabs ( fb ) )
+    {
+      e = m;
+      d = e;
+    }
+    else
+    {
+      s = fb / fa;
+
+      if ( sa == c )
+      {
+        p = 2.0 * m * s;
+        q = 1.0 - s;
+      }
+      else
+      {
+        q = fa / fc;
+        r = fb / fc;
+        p = s * ( 2.0 * m * q * ( q - r ) - ( sb - sa ) * ( r - 1.0 ) );
+        q = ( q - 1.0 ) * ( r - 1.0 ) * ( s - 1.0 );
+      }
+
+      if ( 0.0 < p )
+      {
+        q = - q;
+      }
+      else
+      {
+        p = - p;
+      }
+
+      s = e;
+      e = d;
+
+      if ( 2.0 * p < 3.0 * m * q - fabs ( tol * q ) &&
+           p < fabs ( 0.5 * s * q ) )
+      {
+        d = p / q;
+      }
+      else
+      {
+        e = m;
+        d = e;
+      }
+    }
+    sa = sb;
+    fa = fb;
+
+    if ( tol < fabs ( d ) )
+    {
+      sb = sb + d;
+    }
+    else if ( 0.0 < m )
+    {
+      sb = sb + tol;
+    }
+    else
+    {
+      sb = sb - tol;
+    }
+
+    fb = cpp_temp_func(sb, y_ord, x_ord, n, n_grid, lambda2);
+
+    if ( ( 0.0 < fb && 0.0 < fc ) || ( fb <= 0.0 && fc <= 0.0 ) )
+    {
+      c = sa;
+      fc = fa;
+      e = sb - sa;
+      d = e;
+    }
+  }
+  return sb;
+}
+
+
+// [[Rcpp::export]]
+double cpp_uniroot2(double lambda_min, double lambda_max,
+                   arma::vec y_ord, arma::vec x_ord,
+                   int n, int n_grid, double lambda2,
+                   double tol = 1e-10, int max_iter = 300) {
+
+  double b = lambda_max;
+  double a = lambda_min;
+
+  double fa = cpp_temp_func(a, y_ord, x_ord,
+                            n, n_grid, lambda2);
+  double fb = cpp_temp_func(b, y_ord, x_ord,
+                            n, n_grid, lambda2);
+
+  if(sign(fa) == 0) {
+    return a;
+  }
+  if(sign(fb) == 0){
+    return b;
+  }
+
+  if(sign(fa) == sign(fb)) {
+    stop("The sign must be different at endpoints.");
+  }
+
+  int N = 1;
+  double c = 0;
+
+  while( N < max_iter) {
+    c = (a + b)/2;
+    double temp_func = cpp_temp_func(c, y_ord, x_ord,
+                                     n, n_grid, lambda2);
+    if(temp_func == 0 || (b-a)/2 < tol) {
+      return c;
+    }
+
+    N = N + 1;
+    if(sign(temp_func) == sign(fa)) {
+      a = c;
+      fa = temp_func;
+    } else {
+      b = c;
+    }
+  }
+
+  return c;
+}
+
+
+// [[Rcpp::export]]
 double cpp_uniroot(double lambda_min, double lambda_max,
                    arma::vec y_ord, arma::vec x_ord,
                    int n, int n_grid, double lambda2,
@@ -182,6 +411,7 @@ double cpp_uniroot(double lambda_min, double lambda_max,
 
   double x_max = lambda_max;
   double x_min = lambda_min;
+
 
   if(x_max - x_min <= tol) {
     return (x_max + x_min)/2;
@@ -214,7 +444,8 @@ double cpp_uniroot(double lambda_min, double lambda_max,
 // [[Rcpp::export]]
 arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
                          double lambda1, double lambda2,
-                         int n, int n_grid) {
+                         int n, int n_grid,
+                         double lam_tilde_old) {
 
   // We now want to solve the optimization problem.
   // minimize (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda1)*||f|| +(lambda2)*sqrt(J(f))
@@ -229,16 +460,23 @@ arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
   //
 
   arma::vec f_hat;
-  double temp_initial = cpp_temp_func(lambda2*100, y_ord, x_ord,
-                                      n, n_grid, lambda2);
-  if(temp_initial < 0) {
+  double lam_max = cpp_find_lamdaMax(y_ord, x_ord,
+                                     n, n_grid, lam_tilde_old,
+                                     lambda2);
+  arma::vec tols(2);
+  double tol = 1e-10;
+  if(pow(lambda2,2) < tol) {
+    tol = pow(lambda2,2);
+  }
+
+  if(lam_max < 0) {
     double b1 = as_scalar(cov(x_ord, y_ord))/as_scalar(var(x_ord));
     double b0 = as_scalar(mean(y_ord) - (b1*mean(x_ord)));
     f_hat = b0 + b1 * x_ord;
   } else {
-    double temp_lam = cpp_uniroot(lambda2*1e-10, lambda2*1e+2,
-                                  y_ord, x_ord, n, n_grid,
-                                  lambda2, 1e-7);
+    double temp_lam = cpp_uniroot3(0, lam_max, y_ord, x_ord,
+                                  n, n_grid, lambda2,
+                                  tol);
     f_hat = cpp_spline_raw(y_ord, x_ord, temp_lam, n, n_grid);
   }
 
@@ -248,10 +486,10 @@ arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
   } else {
     return temp_inner * f_hat;
   }
-
   return f_hat;
-
 }
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -322,7 +560,7 @@ arma::field<mat> GetZ(arma::mat f_hat, double intercept,
 
     arma::vec temp_ans = cpp_solve_prox(temp_y.elem(ord_mat.col(i)) - mean(temp_y),
                                         x_mat_ord.col(i), step_size*lambda1/n,
-                                        step_size*lambda2/n, n, 500);
+                                        step_size*lambda2/n, n, 500, 1);
 
     ans.col(i) = temp_ans.elem(rank_mat.col(i));
   }
