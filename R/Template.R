@@ -24,6 +24,13 @@
 #   family: "gaussian" for least squares loss and "binomial" for logistic loss.
 #   method: Charecter vector indicating method to use. "tf" for trend-filtering
 #           and "sobolev" for the sobolev norm smoothness penalty.
+#   parallel: A boolean, indicating if proximal gradient descent should
+#             be parallelized. Ignored if coord.desc == TRUE.
+#   ncores: If parallel == TRUE, specifies size of cluster.
+#   line_search: A boolean, indicator if line search should be used or
+#                 fixed step size.
+#   FISTA: A boolean, should the accelerated proximal gradient descent be used?
+#
 #
 # Returns:
 #   A list with the following components:
@@ -34,7 +41,10 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
                          init_fhat, init_intercept, k=0,
                          max_iter = 100, tol = 1e-4,
                          step_size = 1, alpha = 0.5,
-                         family = "gaussian", method = "tf", ...) {
+                         family = "gaussian", method = "tf",
+                         parallel = FALSE, ncores = 8,
+                         line_search = TRUE, FISTA = FALSE,
+                         ...) {
 
   # Initialize some objects.
   counter <- 1
@@ -43,16 +53,45 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
   p <- ncol(x_ord)
 
   # Initialize parameters using warm starts.
-  old_ans <- vector("list", 2);
+  old_ans <- vector("list", 2)
   old_ans[[1]] <- init_intercept
   old_ans[[2]] <- init_fhat
 
-  while(counter < max_iter & !converged) {
-    new_ans <- LineSearch(alpha, step_size, y, old_ans[[2]], old_ans[[1]],
-                          x_ord, ord, k, lambda1, lambda2, family,
-                          method = method, ...)
+  if(FISTA) {
+    # While old_ans will be used to store
+    # iterate k, we have another object to store
+    # iterate k-1.
+    # This is for Nesterov style acceleration.
+    old_old_ans <- vector("list", 2)
+    old_old_ans[[1]] <- init_intercept
+    old_old_ans[[2]] <- init_fhat
+  }
 
-    temp_res1 <- mean((new_ans[[2]] - old_ans[[2]])^2) + (new_ans[[1]] - old_ans[[1]])^2
+  while(counter < max_iter & !converged) {
+    if(FISTA) {
+      # Evaluate extrapolation step of fista.
+      wk <- counter/(counter+3)
+      fista_fhat <- old_ans[[2]] + wk*(old_ans[[2]] - old_old_ans[[2]])
+      fista_inter <- old_ans[[1]] + wk*(old_ans[[1]] - old_old_ans[[1]])
+      new_ans <- LineSearch(alpha, step_size, y, fista_fhat[[2]],
+                            fista_fhat[[1]],
+                            x_ord, ord, k, lambda1, lambda2, family,
+                            method = method,parallel = parallel,
+                            ncores = ncores,
+                            line_search = line_search, ...)
+
+    } else {
+      new_ans <- LineSearch(alpha, step_size, y,
+                            old_ans[[2]], old_ans[[1]],
+                            x_ord, ord, k, lambda1, lambda2, family,
+                            method = method,parallel = parallel,
+                            ncores = ncores,
+                            line_search = line_search, ...)
+    }
+
+
+    temp_res1 <- mean((new_ans[[2]] - old_ans[[2]])^2) +
+      (new_ans[[1]] - old_ans[[1]])^2
     temp_res2 <- mean((old_ans[[2]])^2) + (old_ans[[1]])^2
 
     # Compare the relative change in parameter values and compare to
@@ -61,6 +100,9 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
       converged <- TRUE
     } else {
       counter <- counter + 1;
+      if(FISTA){
+        old_old_ans <- old_ans;
+      }
       old_ans <- new_ans;
     }
   }
@@ -165,23 +207,38 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 #               should be used for family=="gaussian"
 #   method: Charecter vector indicating method to use. "tf" for trend-filtering
 #           and "sobolev" for the sobolev norm smoothness penalty.
+#   parallel: A boolean, indicating if proximal gradient descent should
+#             be parallelized. Ignored if coord.desc == TRUE.
+#   ncores: If parallel == TRUE, specifies size of cluster.
+#   line_search: A boolean, indicator if line search should be used or
+#                 fixed step size.
+#   FISTA: A boolean, should the accelerated proximal gradient descent be used?
 
 fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
                     nlam = 50, zeta = NULL,
                     k = 0, family = "binomial",
-                    initintercept = NULL, step = length(y), alpha = 0.5,
-                    coord.desc = TRUE, method = "tf", ...) {
+                    initintercept = NULL, step = 1, alpha = 0.8,
+                    coord.desc = TRUE, method = "tf",
+                    parallel = FALSE, ncores = 8,
+                    line_search = TRUE,
+                    FISTA = FALSE, ...) {
+
 
   # Initialize some values.
   x <- as.matrix(x)
   n <- length(y)
   p <- ncol(x)
 
-  # Generate matrix of orders and ranks.
+  # Generate matrix of orders.
   ord <- apply(x, 2, order)
-  ranks <- apply(x, 2, rank)
-  x_ord <- apply(x, 2, sort)
+  x_ord <- sapply(1:p, function(i){
+    x[ord[,i], i]
+  })
+
+  ### Deprecated, no need to calculate ranks,
+  ### especially when working with high-dimensional data.
+  #ranks <- apply(x, 2, rank)
 
   lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
                  length = nlam)
@@ -218,8 +275,17 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   ans.inters <- numeric(nlam)
   conv.vec <- c()
 
+  # If we are paralleling some computations.
+  if(parallel) {
+    require(doParallel)
+    require(parallel)
+
+    # Begin cluster
+    cl <- parallel::makeCluster(ncores)
+    doParallel::registerDoParallel(cl)
+  }
   for(i in 1:nlam) {
-    #cat("Lambda value: ", i, "\n")
+    cat("Lambda value: ", i, "\n")
     if(family=="gaussian" & coord.desc) {
       temp <- blockCoord_one(y, x, ord,init_fhat = initpars,
                              k=k, max_iter = max.iter, tol = tol,
@@ -231,7 +297,10 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                      init_fhat = initpars, init_intercept = initintercept,
                      k=k, max_iter = max.iter, tol = tol,
                      step_size = step, alpha = alpha,
-                     family = family, method = method,...)
+                     family = family, method = method,
+                     parallel = parallel, ncores = ncores,
+                     line_search = line_search, FISTA = FISTA,
+                     ...)
 
     }
 
@@ -241,6 +310,10 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     initintercept <- ans.inters[i]
     initpars <- ans[, , i]
     conv.vec <- c(conv.vec, temp$conv)
+  }
+
+  if(parallel) {
+    parallel::stopCluster(cl)
   }
 
   obj <- list("f_hat" = ans,

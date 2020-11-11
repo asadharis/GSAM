@@ -8,7 +8,7 @@
 # Returns:
 #   A scalar value of the loss function.
 GetLogistic <- function(y, f_hat, intercept) {
-  linear_part <- apply(f_hat, 1, sum) + intercept
+  linear_part <- rowSums(f_hat) + intercept
   mean(log(1 + exp(-y * linear_part)))
 }
 
@@ -20,7 +20,7 @@ GetLogistic <- function(y, f_hat, intercept) {
 # Results:
 # A scalar value of the loss.
 GetLS <- function(y, f_hat, intercept) {
-  linear_part <- apply(f_hat, 1, sum) + intercept
+  linear_part <- rowSums(f_hat) + intercept
   mean((y - linear_part)^2)/2
 }
 
@@ -42,7 +42,8 @@ GetLS <- function(y, f_hat, intercept) {
 GetVectorR <- function(y, f_hat, intercept) {
   n <- length(y)
 
-  lin_part <- apply(f_hat, 1, sum) + intercept
+  #lin_part <- apply(f_hat, 1, sum) + intercept
+  lin_part <- rowSums(f_hat) + intercept
   (-y/n)/(1 + exp(y * lin_part))
 }
 
@@ -58,7 +59,8 @@ GetVectorR <- function(y, f_hat, intercept) {
 # Returns:
 #   r: An n-vector, the derivative vector.
 GetVectorR2 <- function(y, f_hat, intercept){
-  linear_part <- apply(f_hat, 1, sum) + intercept
+  #linear_part <- apply(f_hat, 1, sum) + intercept
+  linear_part <- rowSums(f_hat) + intercept
   n <- length(y)
 
   -1*(y - linear_part)/n
@@ -96,10 +98,20 @@ GetZ <- function(f_hat, intercept, step_size,
                  x_mat_ord, ord_mat, k,
                  lambda1, lambda2, y,
                  family = "gaussian",
-                 method = "tf",...) {
+                 method = "tf", parallel = FALSE,
+                 ncores = 8, ...) {
 
   n <- nrow(f_hat)
   p <- ncol(f_hat)
+
+  if(parallel) {
+    p_grp <- ceiling(min(p/ncores, 100))
+    n_grps <- ceiling(p/p_grp)
+    grps <- rep(1:n_grps, each = p_grp)
+    grps <- grps[1:p]
+  }
+
+
   if(family == "gaussian") {
     # Least squares loss
     vector_r <- GetVectorR2(y, f_hat, intercept)
@@ -112,19 +124,95 @@ GetZ <- function(f_hat, intercept, step_size,
 
   inter_step <- apply(f_hat, 2, "-", step_size * vector_r)
 
+  ##########################################################
+  ######## Temp functions for parallel computing ###########
+  ##########################################################
+  temp.func.tf <- function(inter_step, x_mat_ord, ord_mat,
+                           k, lambda1, lambda2, step_size,
+                           n, p, n_grps, p_grp, ...) {
+    foreach(i = 1:n_grps, .combine = cbind) %dopar% {
+      ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
+      if(i == n_grps) {
+        ind <- head(ind, p - ((i-2)*p_grp + p_grp))
+      }
+      ans_j <- matrix(NA, ncol = length(ind), nrow = n)
+      for(j in 1:length(ind)) {
+        temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
+        ans_j[ord_mat[, ind[j]],j] <-
+          GSAM::solve.prox.tf(temp_y - mean(temp_y),
+                              x_mat_ord[, ind[j]],k = k,
+                              lambda1 = lambda1*step_size/n,
+                            lambda2 = lambda2*step_size/n,
+                            ...);
+      }
+      ans_j
+    }
+  }
+
+  temp.func.spline <- function(inter_step, x_mat_ord, ord_mat,
+                           k, lambda1, lambda2, step_size,
+                           n, p,  n_grps, p_grp, ...) {
+    foreach(i = 1:n_grps, .combine = cbind) %dopar% {
+      ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
+      if(i == n_grps) {
+        ind <- head(ind, p - ((i-2)*p_grp + p_grp))
+      }
+      ans_j <- matrix(NA, ncol = length(ind), nrow = n)
+      for(j in 1:length(ind)) {
+        temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
+        ans_j[ord_mat[, ind[j]],j] <-
+          GSAM::cpp_solve_prox(temp_y - mean(temp_y),
+                              x_mat_ord[, i],k = k,
+                              lambda1 = lambda1*step_size/n,
+                              lambda2 = lambda2*step_size/n,
+                              n = n, n_grid = 1e+3,
+                              lam_tilde_old = 0.5);
+        # The lam_tilde_old parameter is an experimental feature,
+        # does noting at the moment
+      }
+      ans_j
+    }
+  }
+  ##########################################################
+  ######## Temp functions for parallel computing ###########
+  ##########################################################
+
   ans <- matrix(0, nrow = n, ncol = p)
-  for(i in 1:p) {
-    temp_y <- inter_step[ord_mat[, i], i]
-    if(method == "tf") {
-      ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y - mean(temp_y),
+  if(method == "tf") {
+    if(parallel) {
+      ans <- tryCatch(temp.func.tf(inter_step, x_mat_ord, ord_mat,
+                                   k, lambda1, lambda2, step_size,
+                                   n, p, n_grps, p_grp, ...),
+                      error = function(e) print(e))
+
+
+    } else {
+      for(i in 1:p) {
+        temp_y <- inter_step[ord_mat[, i], i]
+        ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y - mean(temp_y),
+                                               x_mat_ord[, i],
+                                               k = k,
+                                               lambda1 = lambda1*step_size/n,
+                                               lambda2 = lambda2*step_size/n,
+                                               ...);
+      }
+    }
+  }
+
+  if(method == "spline") {
+    if(parallel) {
+      ans <- tryCatch(temp.func.spline(inter_step, x_mat_ord, ord_mat,
+                                       k, lambda1, lambda2, step_size,
+                                       n, p, n_grps, p_grp),
+                      error = function(e) print(e))
+    } else {
+      temp_y <- inter_step[ord_mat[, i], i]
+      ans[ord_mat[, i], i] <- cpp_solve_prox(temp_y - mean(temp_y),
                                              x_mat_ord[, i],
-                                             k = k, lambda1 = lambda1*step_size/n,
+                                             lambda1 = lambda1*step_size/n,
                                              lambda2 = lambda2*step_size/n,
-                                             ...);
-    } else if(method == "sobolev") {
-      ans[ord_mat[, i], i] <- solve.prox.spline(temp_y[ord_mat[, i]]- mean(temp_y),
-                                                x_mat_ord[, i], lambda1 = lambda1*step_size/n,
-                                                lambda2 = lambda2*step_size/n);
+                                             n = n, n_grid = 1e+3,
+                                             lam_tilde_old = 0.5);
     }
   }
   list(intercept_new, ans)
@@ -144,8 +232,19 @@ GetZ <- function(f_hat, intercept, step_size,
 #   The resulting object has the same form as that of the GetZ() function.
 LineSearch <- function(alpha, step_size, y, f_hat, intercept,
                        x_mat_ord, ord_mat, k, lambda1, lambda2,
-                       family = "gaussian",
-                       method = "tf",...) {
+                       family = "gaussian", method = "tf",
+                       parallel = FALSE, ncores = 8,
+                       line_search = TRUE,
+                       ...) {
+  if(!line_search) {
+    # Return the next step withou any line search..
+    temp_z <- GetZ(f_hat, intercept, step_size,
+                   x_mat_ord, ord_mat, k,
+                   lambda1, lambda2, y, family = family,
+                   method = method, parallel = parallel,
+                   ncores = ncores, ...)
+    return(temp_z)
+  }
 
   if(family == "binomial") {
     # Logistic Loss
@@ -163,7 +262,8 @@ LineSearch <- function(alpha, step_size, y, f_hat, intercept,
     temp_z <- GetZ(f_hat, intercept, step_size,
                    x_mat_ord, ord_mat, k,
                    lambda1, lambda2, y, family = family,
-                   method = method,...)
+                   method = method, parallel = parallel,
+                   ncores = ncores, ...)
 
     # Generate the values needed for stopping criteria.
     if(family == "binomial") {

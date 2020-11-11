@@ -5,11 +5,11 @@ importFrom(Rcpp, evalCpp)
 export(fit.additive)
 S3method(predict, add_mod)
 
-export(solve.prox.spline)
 export(cpp_solve_prox)
-export(solve.prox.spline2)
-export(solve.spline)
 
 export(solve.prox.tf)
 export(blockCoord_one)
 export(proxGrad_one)
+
+
+export(GetZ)
