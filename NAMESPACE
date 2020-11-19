@@ -4,6 +4,7 @@ importFrom(Rcpp, evalCpp)
 
 export(fit.additive)
 S3method(predict, add_mod)
+S3method(plot, add_mod)
 
 export(cpp_solve_prox)
 

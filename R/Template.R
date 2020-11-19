@@ -40,7 +40,7 @@
 proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
                          init_fhat, init_intercept, k=0,
                          max_iter = 100, tol = 1e-4,
-                         step_size = 1, alpha = 0.5,
+                         step_size = 5, alpha = 0.8,
                          family = "gaussian", method = "tf",
                          parallel = FALSE, ncores = 8,
                          line_search = TRUE, FISTA = FALSE,
@@ -67,16 +67,35 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
     old_old_ans[[2]] <- init_fhat
   }
 
+  if(line_search == FALSE) {
+    # If not doing a line search we need to specify a step size in terms of the
+    # Lipchitz constant.
+    # Specifcally we use step size ((pa+1)*L)^-1 where L is
+    # the lipschitz constant, and pa is the number of non-zero functions on the
+    # current iterate.
+
+    if(family == "binomial") {
+      L.const <- 1/4
+    } else if(family == "gaussian") {
+      L.const <- 1
+    }
+  }
+
   while(counter < max_iter & !converged) {
+    if(line_search == FALSE) {
+      sparse_f <- 1 * (colMeans(abs(old_ans[[2]])) != 0)
+      step_size <- (L.const * (1 + sum(sparse_f)))^(-1)
+    }
+
     if(FISTA) {
       # Evaluate extrapolation step of fista.
       wk <- counter/(counter+3)
       fista_fhat <- old_ans[[2]] + wk*(old_ans[[2]] - old_old_ans[[2]])
       fista_inter <- old_ans[[1]] + wk*(old_ans[[1]] - old_old_ans[[1]])
-      new_ans <- LineSearch(alpha, step_size, y, fista_fhat[[2]],
-                            fista_fhat[[1]],
+      new_ans <- LineSearch(alpha, step_size, y, fista_fhat,
+                            fista_inter,
                             x_ord, ord, k, lambda1, lambda2, family,
-                            method = method,parallel = parallel,
+                            method = method, parallel = parallel,
                             ncores = ncores,
                             line_search = line_search, ...)
 
@@ -105,6 +124,11 @@ proxGrad_one <- function(y, x_ord, ord, lambda1, lambda2,
       }
       old_ans <- new_ans;
     }
+  }
+  if(converged == FALSE) {
+    expr <- paste0("Algorithm did not converge for Lambda1 = ", signif(lambda1, 2),
+                   " and Lambda2 = ", signif(lambda2,2));
+    warning(expr)
   }
 
   list("fhat" = new_ans[[2]],
@@ -199,7 +223,7 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 #   zeta: If NULL (default) the lambda_1 = lambda and lambda2 = lambda^2. Otherwise
 #         a double in [0,1] so that lambda_1 = zeta*lambda and lambda_2 = (1-zeta)*lambda.
 #   k: Order of trend-filter
-#   family: "Gaussian" for least squares norm, and "binomial" for logistic loss.
+#   family: "gaussian" for least squares norm, and "binomial" for logistic loss.
 #   ininitintercept: Initial value for the intercept term.
 #   step: Step size for the proximal graident descent algorithm.
 #   alpha: Alpha value for the line search algorithm used in proximal gradient descent.
@@ -213,6 +237,8 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 #   line_search: A boolean, indicator if line search should be used or
 #                 fixed step size.
 #   FISTA: A boolean, should the accelerated proximal gradient descent be used?
+#   return_x: A boolean, should the design matrix be returned.
+#             for large design matrices we recommend return_x == FALSE.
 
 fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
@@ -221,10 +247,21 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
                     initintercept = NULL, step = 1, alpha = 0.8,
                     coord.desc = TRUE, method = "tf",
                     parallel = FALSE, ncores = 8,
-                    line_search = TRUE,
-                    FISTA = FALSE, ...) {
+                    line_search = FALSE,
+                    FISTA = TRUE, verbose = FALSE,
+                    return_x = TRUE, ...) {
 
 
+  method <- tolower(method)
+  if(family != "binomial" & family != "gaussian") {
+    stop("Currenlty, only 'gaussian' and 'binomial' are acceptable values for
+    function parameter: family.")
+  }
+
+  if(method != "tf" & method != "sobolev") {
+    stop("Currenlty, only 'tf' and 'sobolev' are acceptable values for
+    function parameter: method.")
+  }
   # Initialize some values.
   x <- as.matrix(x)
   n <- length(y)
@@ -259,6 +296,16 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     initpars <- matrix(0, ncol = p, nrow = n)
   }
 
+  if(family == "binomial"){
+    y <- factor(y)
+    if(length(levels(y))!=2) {
+      stop("For binomial family response must be binary or a factor with only two
+           levels.")
+    }
+    levs.y <- levels(y)
+    y <- ifelse(y == levels(y)[2], 1, -1)
+  }
+
   if(is.null(initintercept) & family == "binomial") {
     mp <- mean(y)
     initintercept <- log(mp/(1-mp))
@@ -267,9 +314,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     initintercept <- mean(y)
   }
 
-  if(family == "binomial"){
-    y[y==0] <- -1
-  }
+
 
   ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
@@ -283,9 +328,12 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     # Begin cluster
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
+    #print("I'm making a cluster")
   }
   for(i in 1:nlam) {
-    cat("Lambda value: ", i, "\n")
+    if(verbose) {
+      cat("Lambda value: ", i, "\n");
+    }
     if(family=="gaussian" & coord.desc) {
       temp <- blockCoord_one(y, x, ord,init_fhat = initpars,
                              k=k, max_iter = max.iter, tol = tol,
@@ -313,17 +361,29 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
   if(parallel) {
+    #print("I should be closing cluster")
     parallel::stopCluster(cl)
   }
 
-  obj <- list("f_hat" = ans,
-              "intercept" = ans.inters,
-              "x" = x,
-              "ord" = ord,
-              "lam" = lam.seq,
-              "k" = k,
-              "family" = family,
-              "conv" = conv.vec)
+  if(return_x == TRUE) {
+    obj <- list("f_hat" = ans,
+                "intercept" = ans.inters,
+                "x" = x,
+                "ord" = ord,
+                "lam" = lam.seq,
+                "k" = k,
+                "family" = family,
+                "conv" = conv.vec)
+
+  } else {
+    obj <- list("f_hat" = ans,
+                "intercept" = ans.inters,
+                "lam" = lam.seq,
+                "k" = k,
+                "family" = family,
+                "conv" = conv.vec)
+
+  }
 
   class(obj) <- "add_mod"
   return(obj)
@@ -338,9 +398,11 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
 #   new.data: A new x_matrix which we wish to fit.
 #   type: "function" will return the fitted components f_1,...,f_p.
 
-predict.add_mod <- function(obj, new.data, type = "function") {
+predict.add_mod <- function(obj, new.data, type = "function",
+                            x.mat = obj$x) {
   nlam <- length(obj$lam)
   p <- dim(obj$f_hat)[2]
+  obj$x <- x.mat
 
   ans <- array(0, dim = c(dim(new.data), nlam) )
   for(i in 1:nlam) {
@@ -368,6 +430,12 @@ predict.add_mod <- function(obj, new.data, type = "function") {
   return(ans)
 }
 
+plot.add_mod <- function(obj, f_ind = 1, lam_ind = 1,
+                         x.mat = obj$x, ...) {
+  y <- obj$f_hat[,f_ind,lam_ind]
+  plot(x = sort(x.mat[,f_ind]), y=y[order(x.mat[,f_ind])],
+       xlab = paste0("X_", f_ind), ylab = paste0("f_", f_ind), ...)
+}
 
 # Another generic function to find the lambda_max, based on the proximal
 # gradient descent algorithm.

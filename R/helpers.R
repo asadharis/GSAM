@@ -40,11 +40,11 @@ GetLS <- function(y, f_hat, intercept) {
 # Returns:
 #   r: An n-vector, the derivative vector.
 GetVectorR <- function(y, f_hat, intercept) {
-  n <- length(y)
+  #n <- length(y)
 
   #lin_part <- apply(f_hat, 1, sum) + intercept
   lin_part <- rowSums(f_hat) + intercept
-  (-y/n)/(1 + exp(y * lin_part))
+  (-y)/(1 + exp(y * lin_part))
 }
 
 # Another function for calculating the 'r' vector.
@@ -105,7 +105,8 @@ GetZ <- function(f_hat, intercept, step_size,
   p <- ncol(f_hat)
 
   if(parallel) {
-    p_grp <- ceiling(min(p/ncores, 100))
+    #p_grp <- ceiling(min(p/ncores, 100))
+    p_grp <- ceiling(p/ncores)
     n_grps <- ceiling(p/p_grp)
     grps <- rep(1:n_grps, each = p_grp)
     grps <- grps[1:p]
@@ -120,62 +121,10 @@ GetZ <- function(f_hat, intercept, step_size,
     vector_r <- GetVectorR(y, f_hat, intercept)
   }
 
-  intercept_new <- intercept - (step_size * sum(vector_r))
+  intercept_new <- intercept - (step_size * mean(vector_r))
 
   inter_step <- apply(f_hat, 2, "-", step_size * vector_r)
 
-  ##########################################################
-  ######## Temp functions for parallel computing ###########
-  ##########################################################
-  temp.func.tf <- function(inter_step, x_mat_ord, ord_mat,
-                           k, lambda1, lambda2, step_size,
-                           n, p, n_grps, p_grp, ...) {
-    foreach(i = 1:n_grps, .combine = cbind) %dopar% {
-      ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
-      if(i == n_grps) {
-        ind <- head(ind, p - ((i-2)*p_grp + p_grp))
-      }
-      ans_j <- matrix(NA, ncol = length(ind), nrow = n)
-      for(j in 1:length(ind)) {
-        temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
-        ans_j[ord_mat[, ind[j]],j] <-
-          GSAM::solve.prox.tf(temp_y - mean(temp_y),
-                              x_mat_ord[, ind[j]],k = k,
-                              lambda1 = lambda1*step_size/n,
-                            lambda2 = lambda2*step_size/n,
-                            ...);
-      }
-      ans_j
-    }
-  }
-
-  temp.func.spline <- function(inter_step, x_mat_ord, ord_mat,
-                           k, lambda1, lambda2, step_size,
-                           n, p,  n_grps, p_grp, ...) {
-    foreach(i = 1:n_grps, .combine = cbind) %dopar% {
-      ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
-      if(i == n_grps) {
-        ind <- head(ind, p - ((i-2)*p_grp + p_grp))
-      }
-      ans_j <- matrix(NA, ncol = length(ind), nrow = n)
-      for(j in 1:length(ind)) {
-        temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
-        ans_j[ord_mat[, ind[j]],j] <-
-          GSAM::cpp_solve_prox(temp_y - mean(temp_y),
-                              x_mat_ord[, i],k = k,
-                              lambda1 = lambda1*step_size/n,
-                              lambda2 = lambda2*step_size/n,
-                              n = n, n_grid = 1e+3,
-                              lam_tilde_old = 0.5);
-        # The lam_tilde_old parameter is an experimental feature,
-        # does noting at the moment
-      }
-      ans_j
-    }
-  }
-  ##########################################################
-  ######## Temp functions for parallel computing ###########
-  ##########################################################
 
   ans <- matrix(0, nrow = n, ncol = p)
   if(method == "tf") {
@@ -192,27 +141,30 @@ GetZ <- function(f_hat, intercept, step_size,
         ans[ord_mat[, i], i] <-  solve.prox.tf(temp_y - mean(temp_y),
                                                x_mat_ord[, i],
                                                k = k,
-                                               lambda1 = lambda1*step_size/n,
-                                               lambda2 = lambda2*step_size/n,
+                                               lambda1 = lambda1*step_size,
+                                               lambda2 = lambda2*step_size,
                                                ...);
       }
     }
   }
 
-  if(method == "spline") {
+  if(method == "sobolev") {
     if(parallel) {
       ans <- tryCatch(temp.func.spline(inter_step, x_mat_ord, ord_mat,
                                        k, lambda1, lambda2, step_size,
                                        n, p, n_grps, p_grp),
                       error = function(e) print(e))
     } else {
-      temp_y <- inter_step[ord_mat[, i], i]
-      ans[ord_mat[, i], i] <- cpp_solve_prox(temp_y - mean(temp_y),
-                                             x_mat_ord[, i],
-                                             lambda1 = lambda1*step_size/n,
-                                             lambda2 = lambda2*step_size/n,
-                                             n = n, n_grid = 1e+3,
-                                             lam_tilde_old = 0.5);
+      for(i in 1:p) {
+        temp_y <- inter_step[ord_mat[, i], i]
+        ans[ord_mat[, i], i] <- cpp_solve_prox(temp_y - mean(temp_y),
+                                               x_mat_ord[, i],
+                                               lambda1 = lambda1*step_size,
+                                               lambda2 = lambda2*step_size,
+                                               n = n, n_grid = 1e+3,
+                                               lam_tilde_old = 0.5);
+      }
+
     }
   }
   list(intercept_new, ans)
@@ -287,4 +239,58 @@ LineSearch <- function(alpha, step_size, y, f_hat, intercept,
   # Return the next iterate based on the selected step size.
   return(temp_z)
 }
+
+
+##########################################################
+######## Temp functions for parallel computing ###########
+##########################################################
+temp.func.tf <- function(inter_step, x_mat_ord, ord_mat,
+                         k, lambda1, lambda2, step_size,
+                         n, p, n_grps, p_grp, ...) {
+  foreach(i = 1:n_grps, .combine = cbind) %dopar% {
+    ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
+    if(i == n_grps) {
+      ind <- head(ind, p - ((i-2)*p_grp + p_grp))
+    }
+    ans_j <- matrix(NA, ncol = length(ind), nrow = n)
+    for(j in 1:length(ind)) {
+      temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
+      ans_j[ord_mat[, ind[j]],j] <-
+        GSAM::solve.prox.tf(temp_y - mean(temp_y),
+                            x_mat_ord[, ind[j]],k = k,
+                            lambda1 = lambda1*step_size,
+                            lambda2 = lambda2*step_size,
+                            ...);
+    }
+    ans_j
+  }
+}
+
+temp.func.spline <- function(inter_step, x_mat_ord, ord_mat,
+                             k, lambda1, lambda2, step_size,
+                             n, p,  n_grps, p_grp, ...) {
+  foreach(i = 1:n_grps, .combine = cbind) %dopar% {
+    ind <- ((i-1)*p_grp + 1):((i-1)*p_grp + p_grp)
+    if(i == n_grps) {
+      ind <- head(ind, p - ((i-2)*p_grp + p_grp))
+    }
+    ans_j <- matrix(NA, ncol = length(ind), nrow = n)
+    for(j in 1:length(ind)) {
+      temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
+      ans_j[ord_mat[, ind[j]],j] <-
+        GSAM::cpp_solve_prox(temp_y - mean(temp_y),
+                             x_mat_ord[, i],k = k,
+                             lambda1 = lambda1*step_size,
+                             lambda2 = lambda2*step_size,
+                             n = n, n_grid = 1e+3,
+                             lam_tilde_old = 0.5);
+      # The lam_tilde_old parameter is an experimental feature,
+      # does noting at the moment
+    }
+    ans_j
+  }
+}
+##########################################################
+######## Temp functions for parallel computing ###########
+##########################################################
 

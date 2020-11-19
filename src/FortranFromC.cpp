@@ -37,6 +37,19 @@ void callSS_Fortran(double *y, double *x, double *sy, double *lambda, int *n_poi
 {
   double lam = (*lambda);
   double n = (*n_point);
+
+  /////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////
+  /////// EDIT TO ORIGINAL SOURCE CODE////////////////////
+  /////////////////////////////////////////////////////////
+  // Here instead of passing log(lam) we pass
+  // log(2*lam). This is because the Fortron routine
+  // solves the problem:
+  //
+  // (1/n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + lambda*J(f)
+  //
+  // whereas in our paper we have 1/(2n) instead of (1/n).
   double h = log(2*lam); //log lambda
   //double h = log(lam); //log lambda
   int npoint = n; //number of points

@@ -2,6 +2,7 @@
 ^\.Rproj\.user$
 ^simulations$
 ^test*\.R$
+^tests$
 ^dataAnalysis$
 ^simulationsReview$
 ^dataAnalysisReview$
