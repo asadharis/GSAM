@@ -407,8 +407,10 @@ predict.add_mod <- function(obj, new.data, type = "function",
   ans <- array(0, dim = c(dim(new.data), nlam) )
   for(i in 1:nlam) {
     for(j in 1:p) {
-      ans[,j,i] <- approx(obj$x[, j], obj$f_hat[,j,i], new.data[, j],
-                          rule = 2)$y
+      ans[,j,i] <- suppressWarnings({
+        approx(obj$x[, j], obj$f_hat[,j,i], new.data[, j],
+               rule = 2)$y
+      })
     }
   }
 
