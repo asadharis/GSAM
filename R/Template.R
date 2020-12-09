@@ -326,8 +326,8 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     require(parallel)
 
     # Begin cluster
-    cl <- parallel::makeCluster(ncores)
-    doParallel::registerDoParallel(cl)
+    #cl <- parallel::makeCluster(ncores)
+    doParallel::registerDoParallel(cores = ncores)
     #print("I'm making a cluster")
   }
   for(i in 1:nlam) {
@@ -360,10 +360,6 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     conv.vec <- c(conv.vec, temp$conv)
   }
 
-  if(parallel) {
-    #print("I should be closing cluster")
-    parallel::stopCluster(cl)
-  }
 
   if(return_x == TRUE) {
     obj <- list("f_hat" = ans,

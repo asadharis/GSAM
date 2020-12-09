@@ -10,7 +10,8 @@
 #   3. Aggregate results for each method.
 #   4. Save results to DataFile
 
-run.sim <- function(seed = 1, name = "Breast_GSE70947_small") {
+run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
+                    ncores = 8) {
   require(GSAM)
   require(glmnet)
   require(SAM)
@@ -30,7 +31,7 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small") {
   # Use seed value to split the data into training/test/val.
   set.seed(seed)
   n <- length(dat$y)
-  ncores <- 8
+
   sam_set <- sample(1:3, size = n, replace=TRUE, prob = c(0.60,0.2,0.2))
   dat_train <- dat[sam_set==1,]
   dat_test <- dat[sam_set==2,]
