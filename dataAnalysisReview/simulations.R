@@ -116,8 +116,10 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
 
  args <-  commandArgs(T)
  seed <- as.numeric(args[[1]])
-#seed <- 1
+ name <- as.character(args[[2]])
+ ncores <- as.numeric(args[[3]])
 
-run.sim(seed=seed)
+#seed <- 1
+run.sim(seed=seed, name = name, ncores = ncores)
 
 q(save = "no")
