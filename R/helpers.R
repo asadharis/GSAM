@@ -279,7 +279,7 @@ temp.func.spline <- function(inter_step, x_mat_ord, ord_mat,
       temp_y <- inter_step[ord_mat[,ind[j]], ind[j]]
       ans_j[ord_mat[, ind[j]],j] <-
         GSAM::cpp_solve_prox(temp_y - mean(temp_y),
-                             x_mat_ord[, i],k = k,
+                             x_mat_ord[, ind[j]],
                              lambda1 = lambda1*step_size,
                              lambda2 = lambda2*step_size,
                              n = n, n_grid = 1e+3,
