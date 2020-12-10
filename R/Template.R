@@ -307,7 +307,9 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
   if(is.null(initintercept) & family == "binomial") {
-    mp <- mean(y)
+    y2 <- y
+    y2[y==-1] <- 0
+    mp <- mean(y2)
     initintercept <- log(mp/(1-mp))
   }
   if(is.null(initintercept) & family == "gaussian") {

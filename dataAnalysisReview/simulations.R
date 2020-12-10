@@ -19,6 +19,9 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
   require(parallel)
   require(doParallel)
 
+  seed = 10; name = "Breast_GSE70947_small";
+  ncores = 8
+
   source("DataProcessing.R")
   source("helpers.R")
   source("lasso.R")
@@ -70,7 +73,8 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
   # SSP RESULTS!-------------------------------
   ssp <- simulation.ssp(dat_train, dat_test, dat_val,
                         max.lambda = 1, lambda.min.ratio = 1e-3,
-                        parallel = TRUE, ncores = ncores)
+                        parallel = TRUE, ncores = ncores,
+                        verbose = TRUE)
 
   cat("Finished SSP\n")
   # Trend filtering results -------------------------------
@@ -118,6 +122,7 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
  seed <- as.numeric(args[[1]])
  name <- as.character(args[[2]])
  ncores <- as.numeric(args[[3]])
+
 
 #seed <- 1
 run.sim(seed=seed, name = name, ncores = ncores)
