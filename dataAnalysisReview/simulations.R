@@ -19,8 +19,8 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
   require(parallel)
   require(doParallel)
 
-  #seed = 10; name = "Breast_GSE70947_small";
-  #ncores = 8
+  # seed = 10; name = "Breast_GSE70947_small";
+  # ncores = 8
 
   source("DataProcessing.R")
   source("helpers.R")
@@ -72,25 +72,24 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
 
   # SSP RESULTS!-------------------------------
   ssp <- simulation.ssp(dat_train, dat_test, dat_val,
-                        max.lambda = 1, lambda.min.ratio = 1e-3,
-                        parallel = TRUE, ncores = ncores,
-                        verbose = TRUE)
+                        max.lambda = NULL, lambda.min.ratio = 1e-4,
+                        parallel = TRUE, ncores = ncores)
 
   cat("Finished SSP\n")
   # Trend filtering results -------------------------------
   tf0 <- simulation.tf(dat_train, dat_test, dat_val, k=0,
-                       lambda.min.ratio = 1e-3, max.lambda = 1,
+                       lambda.min.ratio = 1e-4, max.lambda = NULL,
                        parallel = TRUE, ncores = ncores)
 
   cat("Finished TF0\n")
   # TF 1 -------------------------------
   tf1 <- simulation.tf(dat_train, dat_test, dat_val, k=1,
-                       lambda.min.ratio = 1e-3, max.lambda = 1,
+                       lambda.min.ratio = 1e-4, max.lambda = NULL,
                        parallel = TRUE, ncores = ncores)
   cat("Finished TF1\n")
   # TF 2 -------------------------------
   tf2 <- simulation.tf(dat_train, dat_test, dat_val, k=2,
-                       lambda.min.ratio = 1e-3, max.lambda = 1,
+                       lambda.min.ratio = 1e-4, max.lambda = NULL,
                        parallel = TRUE, ncores = ncores)
   cat("Finished TF2\n")
   # Collect the results

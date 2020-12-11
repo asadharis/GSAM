@@ -13,7 +13,7 @@ simulation.tf <- function(dat_train, dat_test, dat_val,
                       k=k,
                       lambda.max = max.lambda,
                       lambda.min.ratio = lambda.min.ratio,
-                      max.iter = 100, ...)
+                      max.iter = 500, ...)
 
   # Evaluate results
   tf_res <- eval.obj(mod, dat_train, dat_test, dat_val,

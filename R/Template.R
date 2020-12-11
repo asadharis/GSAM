@@ -241,7 +241,8 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
 #             for large design matrices we recommend return_x == FALSE.
 
 fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
-                    initpars = NULL, lambda.max = 1, lambda.min.ratio = 1e-3,
+                    initpars = NULL, lambda.max = NULL,
+                    lambda.min.ratio = 1e-3,
                     nlam = 50, zeta = NULL,
                     k = 0, family = "binomial",
                     initintercept = NULL, step = 1, alpha = 0.8,
@@ -277,20 +278,6 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   ### especially when working with high-dimensional data.
   #ranks <- apply(x, 2, rank)
 
-  lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
-                 length = nlam)
-  lam.seq <- 10^lam.seq
-
-  if(is.null(zeta)) {
-    lam1.seq <- lam.seq
-    lam2.seq <- lam.seq^2
-  } else {
-    if(zeta > 1 | zeta < 0) {
-      stop("zeta must be within [0,1]")
-    }
-    lam1.seq <- lam.seq * zeta
-    lam2.seq <- lam.seq * (1 - zeta)
-  }
 
   if(is.null(initpars)) {
     initpars <- matrix(0, ncol = p, nrow = n)
@@ -317,6 +304,32 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
 
+  if(family == "binomial" & is.null(lambda.max)) {
+    lambda.max <- find.lambdamax(x_ord, ord, k,
+    y, family = family,
+    method = method, parallel = parallel,
+    ncores = ncores, zeta = zeta)
+    if(verbose){
+      cat("Lambda Max found: ", lambda.max, "\n")
+    }
+
+  }
+
+
+  lam.seq <- seq(log10(lambda.max), log10(lambda.max*lambda.min.ratio),
+                   length = nlam)
+  lam.seq <- 10^lam.seq
+
+  if(is.null(zeta)) {
+    lam1.seq <- lam.seq
+    lam2.seq <- lam.seq^2
+  } else {
+    if(zeta > 1 | zeta < 0) {
+      stop("zeta must be within [0,1]")
+    }
+    lam1.seq <- lam.seq * zeta
+    lam2.seq <- lam.seq * (1 - zeta)
+  }
 
   ans <- array(0, dim = c(n, p, nlam))
   ans.inters <- numeric(nlam)
@@ -439,31 +452,40 @@ plot.add_mod <- function(obj, f_ind = 1, lam_ind = 1,
 
 # Another generic function to find the lambda_max, based on the proximal
 # gradient descent algorithm.
-find.lambdamax <- function(y2, x_mat_ord, ord_mat,
-                          family) {
-  n <- length(y2)
-  y.bar <- sum(y2==1)/n
+find.lambdamax <- function(x_mat_ord, ord_mat, k,
+                           y, family = "gaussian",
+                           method = "tf", parallel = FALSE,
+                           ncores = 8, zeta = NULL, ...) {
+  n <- length(y)
+  y.bar <- sum(y==1)/n
   inter <- log(y.bar/(1-y.bar))
 
 
-  vecR <- (-y2/n)/(1 + exp(y2 * inter))
-  lam.max <- n*sqrt(mean(vecR^2))
+  vecR <- (-y)/(1 + exp(y * inter))
+  lam.max <- sqrt(mean(vecR^2))
 
   f_hat <- matrix(0, ncol = ncol(x_mat_ord), nrow = nrow(x_mat_ord))
 
+  #print(zeta)
   convg <- FALSE
   while(!convg){
     lam <- lam.max*0.9
-    if(is.null(gamma)){
-      f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
-                               x_mat_ord, ord_mat,
-                               lam, lam^2, y2, family)
+    if(is.null(zeta)){
+
+      f_hat_new <- GetZ(f_hat, inter, step_size = 1,
+                               x_mat_ord, ord_mat, k=k,
+                               lam, lam^2, y, family = family,
+                        method = method, parallel = parallel,
+                        ncores = ncores, ...)
     } else {
-      f_hat_new <- GetZ_spline(f_hat, inter, step_size = 1,
-                               x_mat_ord, ord_mat,
-                               gamma*lam, (1-gamma)*lam, y2, family)
+      f_hat_new <- GetZ(f_hat, inter, step_size = 1,
+                               x_mat_ord, ord_mat,k=k,
+                               zeta*lam, (1-zeta)*lam, y,
+                        family = family,
+                        method = method, parallel = parallel,
+                        ncores = ncores, ...)
     }
-    temp_res <- sum((f_hat_new[[2]] - f_hat)^2)
+    temp_res <- mean((f_hat_new[[2]] - f_hat)^2)
     if(temp_res < 1e-30){
       lam.max <- lam
     } else {

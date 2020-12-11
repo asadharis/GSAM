@@ -15,18 +15,18 @@
 ## 2. name: Name of dataset.
 ## 3. ncores: Number of cores for parallel process.
 
-if [ -d "output" ]
-then 	
+if [ -d "output$1" ]
+then
 	echo "Dir Exists"
-else 
-	mkdir output
+else
+	mkdir output$1
 fi
 
 module load nixpkgs/16.09 gcc/7.3.0 r/3.6.1
 
 
 export R_LIBS=~/local/R_libs/
-R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  $SLURM_CPUS_PER_TASK" simulations.R output/$SLURM_ARRAY_TASK_ID.Rout
+R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  $SLURM_CPUS_PER_TASK" simulations.R output$1/$SLURM_ARRAY_TASK_ID.Rout
 
 #### SBATCH --account=def-rwplatt   # replace this with your own account
 #### SBATCH --ntasks=4              # number of processes

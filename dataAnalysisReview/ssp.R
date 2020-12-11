@@ -11,7 +11,7 @@ simulation.ssp <- function(dat_train, dat_test, dat_val,
                       family="binomial", method = "sobolev",
                       lambda.max = max.lambda,
                       lambda.min.ratio = lambda.min.ratio,
-                      max.iter = 100, ...)
+                      max.iter = 500, ...)
 
   # Evaluate results
   ssp_res <- eval.obj(mod, dat_train, dat_test, dat_val,
