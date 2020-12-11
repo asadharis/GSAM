@@ -19,8 +19,8 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
   require(parallel)
   require(doParallel)
 
-  seed = 10; name = "Breast_GSE70947_small";
-  ncores = 8
+  #seed = 10; name = "Breast_GSE70947_small";
+  #ncores = 8
 
   source("DataProcessing.R")
   source("helpers.R")
@@ -123,6 +123,7 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
  name <- as.character(args[[2]])
  ncores <- as.numeric(args[[3]])
 
+print(ncores)
 
 #seed <- 1
 run.sim(seed=seed, name = name, ncores = ncores)

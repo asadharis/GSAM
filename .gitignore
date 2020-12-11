@@ -9,8 +9,9 @@ src/*.dll
 .Rhistory
 .Rapp.history
 
-# Session Data files
-.RData
+# Session Data files and output files
+*.RData
+*.Rout
 
 # Example code in package build process
 *-Ex.R
