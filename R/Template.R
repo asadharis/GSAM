@@ -303,6 +303,20 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
     initintercept <- mean(y)
   }
 
+  # If we are paralleling some computations.
+  if(parallel) {
+    require(doParallel)
+    require(parallel)
+
+    # Begin cluster
+    #cl <- parallel::makeCluster(ncores)
+    doParallel::registerDoParallel(cores = ncores)
+    if(verbose) {
+      cat("Registering Parallel Backend with", ncores, "Cores.\n")
+    }
+
+  }
+
 
   if(family == "binomial" & is.null(lambda.max)) {
     lambda.max <- find.lambdamax(x_ord, ord, k,
@@ -335,16 +349,6 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   ans.inters <- numeric(nlam)
   conv.vec <- c()
 
-  # If we are paralleling some computations.
-  if(parallel) {
-    require(doParallel)
-    require(parallel)
-
-    # Begin cluster
-    #cl <- parallel::makeCluster(ncores)
-    doParallel::registerDoParallel(cores = ncores)
-    #print("I'm making a cluster")
-  }
   for(i in 1:nlam) {
     if(verbose) {
       cat("Lambda value: ", i, "\n");

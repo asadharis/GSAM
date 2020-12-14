@@ -1,7 +1,7 @@
 # Simulation results.
 
-process.results <- function(name = "Breast_GSE70947_vsmall") {
-  #name  = "Prostate_GSE6919_U95B"
+process.results <- function(name = "Liver_GSE14520_U133A") {
+  name  = "Colorectal_GSE44076"
   files <- list.files(name)
   files <- paste0(name,"/",files)
   nsim <- length(files)
@@ -38,13 +38,12 @@ process.results <- function(name = "Breast_GSE70947_vsmall") {
   return(list(plot1, plot2, mu))
 }
 
-breast <- process.results()
 ### Gives me good results
 prostate <- process.results(name = "Prostate_GSE6919_U95B")
+liver <- process.results(name = "Liver_GSE14520_U133A")
 
-Liver <- process.results(name = "Liver_GSE14520_U133A")
+#breast2 <- process.results("Breast_GSE22820")
 
-breast2 <- process.results("Breast_GSE22820")
 colorectal <- process.results("Colorectal_GSE44076")
 liver2 <- process.results("Liver_GSE76427")
 lung <- process.results("Lung_GSE19804")
