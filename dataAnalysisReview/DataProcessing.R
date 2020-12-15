@@ -22,5 +22,32 @@ process.dat <- function(name = "Breast_GSE70947_small") {
   dat$y[-ind_norm] <- 1
   dat$y <- as.factor(dat$y)
 
+  # Remove this gene for breast cancer data due to
+  # computational issues with SpAM
+  if(name == "Breast_GSE70947") {
+    dat[,"NM_001195605"] <- NULL
+  }
+  return(dat)
+}
+
+
+# A data processing for other datasets
+process.dat2 <- function(name = "spam") {
+  # Drop the first column.
+  if(name == "spam") {
+    data(spam, package = "kernlab")
+  }
+  dat <- spam[,-58]
+  dat <- cbind(spam$type, dat)
+  n <- nrow(dat)
+  names(dat)[1] <- "y"
+
+  ind_norm <- which(dat$y =="nonspam")
+
+  dat$y <- as.numeric(dat$y)
+  dat$y[ind_norm] <- 0
+  dat$y[-ind_norm] <- 1
+  dat$y <- as.factor(dat$y)
+
   return(dat)
 }

@@ -4,8 +4,8 @@
 #SBATCH --mem=30G
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=16
-#SBATCH --error=/dev/null
-#SBATCH --output=/dev/null
+#SBATCH --error=err/%j.err
+#SBATCH --output=err/%j.out
 #SBATCH --mail-user=asad.haris5862@gmail.com # Send email updates to you or someone else
 #SBATCH --mail-type=ALL         # send an email in all cases (job started, job ended, job aborted)
 
@@ -26,7 +26,7 @@ module load nixpkgs/16.09 gcc/7.3.0 r/3.6.1
 
 
 export R_LIBS=~/local/R_libs/
-R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  $SLURM_CPUS_PER_TASK" simulations.R output$1/$SLURM_ARRAY_TASK_ID.Rout
+R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  $SLURM_CPUS_PER_TASK $SLURM_ARRAY_JOB_ID" simulations.R output$1/$SLURM_ARRAY_TASK_ID.Rout
 
 #### SBATCH --account=def-rwplatt   # replace this with your own account
 #### SBATCH --ntasks=4              # number of processes

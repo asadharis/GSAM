@@ -191,3 +191,95 @@ mod_para <- fit.additive(y=dat_train$y, x=dat_train[,-1],
                         lambda.max = max.lambda,
                         lambda.min.ratio = lambda.min.ratio,
                         max.iter = 100, parallel = TRUE)
+
+
+########################################################
+########################################################
+########################################################
+# Testing Other datasets.
+
+# We will look at spambase dataset package kernlab
+
+data(spam, package = "kernlab")
+
+set.seed(1)
+dat <- process.dat2("spam")
+
+
+n <- length(dat$y)
+
+sam_set <- sample(1:3, size = n, replace=TRUE,
+                  prob = c(0.60,0.2,0.2))
+dat_train <- dat[sam_set==1,]
+dat_test <- dat[sam_set==2,]
+dat_val <- dat[sam_set==3,]
+
+lasso <- simulation.lasso(dat_train, dat_test, dat_val,
+                          lambda.min.ratio = 1e-4)
+
+
+spam2 <- simulation.spam(dat_train, dat_test, dat_val, nbasis = 2,
+                         lambda.min.ratio = 5e-4)
+
+
+#######################################################
+
+# Testing error in SPAM
+
+dat <- process.dat("Breast_GSE70947")
+set.seed(1)
+#dat <- process.dat2("spam")
+
+
+n <- length(dat$y)
+
+sam_set <- sample(1:3, size = n, replace=TRUE,
+                  prob = c(0.60,0.2,0.2))
+dat_train <- dat[sam_set==1,]
+dat_test <- dat[sam_set==2,]
+dat_val <- dat[sam_set==3,]
+
+
+X <- as.matrix(dat_train[,-c(1,14110)])
+y <- as.numeric(as.character(dat_train$y))
+p <- 3
+
+
+fit = list()
+fit$p = p
+fit = list()
+X = as.matrix(X)
+y = as.vector(y)
+n = nrow(X)
+d = ncol(X)
+m = d * p
+n1 = sum(y == 1)
+n0 = sum(y == 0)
+if ((n1 + n0) != n) {
+  cat("Please check the labels. (Must be coded in 1 and 0)")
+  fit = "Please check the labels."
+  return(fit)
+}
+fit$p = p
+X.min = apply(X, 2, min)
+X.max = apply(X, 2, max)
+X.ran = X.max - X.min
+X.min.rep = matrix(rep(X.min, n), nrow = n, byrow = T)
+X.ran.rep = matrix(rep(X.ran, n), nrow = n, byrow = T)
+X = (X - X.min.rep)/X.ran.rep
+fit$X.min = X.min
+fit$X.ran = X.ran
+Z = matrix(0, n, m)
+fit$nkots = matrix(0, p - 1, d)
+fit$Boundary.knots = matrix(0, 2, d)
+for (j in 1:d) {
+  print(j)
+  tmp = (j - 1) * p + c(1:p)
+  tmp0 = ns(X[, j], df = p)
+  Z[, tmp] = tmp0
+  fit$nkots[, j] = attr(tmp0, "knots")
+  fit$Boundary.knots[, j] = attr(tmp0, "Boundary.knots")
+}
+
+ns(problem, df = 3)
+
