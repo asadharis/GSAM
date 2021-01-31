@@ -32,8 +32,8 @@ simulation <- function(seed=1, n = 100,
   mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
                        tol = 1e-4, max.iter = 300)
 
-  #mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 2,
-  #                   lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
+  mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 2,
+                    lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
   mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = 1,
                      lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 0.1,

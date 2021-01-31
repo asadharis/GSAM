@@ -181,8 +181,10 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
                                                x[ord[, j], j],
                                                k = k, lambda1, lambda2, ...)
       } else if(method == "sobolev"){
-        init_fhat[ord[,j], j] <- solve.prox.spline(res[ord[,j]] - mean(res),
-                                                   x[ord[, j], j], lambda1, lambda2)
+        init_fhat[ord[,j], j] <- cpp_solve_prox(res[ord[,j]] - mean(res),
+                                                   x[ord[, j], j], lambda1, lambda2,
+                                                n = n, n_grid = 1e+3,
+                                                lam_tilde_old = 0.5)
       }
     }
 
@@ -327,6 +329,10 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
       cat("Lambda Max found: ", lambda.max, "\n")
     }
 
+  }
+
+  if(family == "gaussian" & is.null(lambda.max)) {
+    lambda.max <- sqrt(mean(y^2))
   }
 
 
