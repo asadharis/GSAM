@@ -91,13 +91,13 @@ run.sim <- function(seed = 1, name = "Breast_GSE70947_small",
   cat("Finished TF0\n")
   # TF 1 -------------------------------
   tf1 <- simulation.tf(dat_train, dat_test, dat_val, k=1,
-                       lambda.min.ratio = 1e-3, max.lambda = NULL,
+                       lambda.min.ratio = 1e-2, max.lambda = NULL,
                        parallel = TRUE, ncores = ncores,
                        verbose = TRUE)
   cat("Finished TF1\n")
   # TF 2 -------------------------------
   tf2 <- simulation.tf(dat_train, dat_test, dat_val, k=2,
-                       lambda.min.ratio = 1e-3, max.lambda = NULL,
+                       lambda.min.ratio = 1e-2, max.lambda = NULL,
                        parallel = TRUE, ncores = ncores,
                        verbose = TRUE)
   cat("Finished TF2\n")
