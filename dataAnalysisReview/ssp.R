@@ -12,6 +12,7 @@ simulation.ssp <- function(dat_train, dat_test, dat_val,
                       lambda.max = max.lambda,
                       lambda.min.ratio = lambda.min.ratio,
                       max.iter = 500, ...)
+  print(object.size(mod))
 
   # Evaluate results
   ssp_res <- eval.obj(mod, dat_train, dat_test, dat_val,

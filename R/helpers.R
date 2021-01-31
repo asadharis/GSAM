@@ -27,9 +27,9 @@ GetLS <- function(y, f_hat, intercept) {
 
 
 # This function calculates the n-vector 'r', which consists of all derivative information.
-# I.e. r_i = -(y_i/n) * {1 + exp[beta + sum(j=1,p) f_j(x_ij) ]}^-1.
+# I.e. r_i = -(y_i) * {1 + exp[beta + sum(j=1,p) f_j(x_ij) ]}^-1.
 # Or more generally we have that
-#   r_i = -(1/n) * l^dot (beta_0 + \sum(j=1,p) f_j(x_ij))
+#   r_i = -l^dot (beta_0 + \sum(j=1,p) f_j(x_ij))
 # This particular function calulates r for the logistic loss.
 #
 # Args:
@@ -48,7 +48,7 @@ GetVectorR <- function(y, f_hat, intercept) {
 }
 
 # Another function for calculating the 'r' vector.
-#   r_i = -(1/n) * l^dot (beta_0 + \sum(j=1,p) f_j(x_ij))
+#   r_i = - * l^dot (beta_0 + \sum(j=1,p) f_j(x_ij))
 # This particular function calulates r for the least squares loss.
 #
 # Args:
@@ -63,7 +63,7 @@ GetVectorR2 <- function(y, f_hat, intercept){
   linear_part <- rowSums(f_hat) + intercept
   n <- length(y)
 
-  -1*(y - linear_part)/n
+  -1*(y - linear_part)
 }
 
 

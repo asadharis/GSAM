@@ -466,7 +466,7 @@ arma::vec cpp_solve_prox(arma::vec y_ord, arma::vec x_ord,
   //   To do this we first solve the prox problem
   //     f^hat_lambda2 <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (lambda2)*sqrt(J(f))
   //
-  //     Which requires us to find the root of thf_hate equation
+  //     Which requires us to find the root of the f_hat equation
   //     x*sqrt(J)(f^tilde_x) - lambda2/2
   //   where
   //     f^tilde_x <- argmin (1/2n) sum(i=1,n) [ (y(i) - f(x(i)))/wght(i) ]**2 + (x)*J(f)

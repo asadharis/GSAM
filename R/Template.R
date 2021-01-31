@@ -181,8 +181,10 @@ blockCoord_one <- function(y, x, ord,init_fhat, k=0,
                                                x[ord[, j], j],
                                                k = k, lambda1, lambda2, ...)
       } else if(method == "sobolev"){
-        init_fhat[ord[,j], j] <- solve.prox.spline(res[ord[,j]] - mean(res),
-                                                   x[ord[, j], j], lambda1, lambda2)
+        init_fhat[ord[,j], j] <- cpp_solve_prox(res[ord[,j]] - mean(res),
+                                                   x[ord[, j], j], lambda1, lambda2,
+                                                n = n, n_grid = 1e+3,
+                                                lam_tilde_old = 0.5)
       }
     }
 
@@ -318,7 +320,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
 
-  if(family == "binomial" & is.null(lambda.max)) {
+  if(is.null(lambda.max)) {
     lambda.max <- find.lambdamax(x_ord, ord, k,
     y, family = family,
     method = method, parallel = parallel,
@@ -461,12 +463,18 @@ find.lambdamax <- function(x_mat_ord, ord_mat, k,
                            method = "tf", parallel = FALSE,
                            ncores = 8, zeta = NULL, ...) {
   n <- length(y)
-  y.bar <- sum(y==1)/n
-  inter <- log(y.bar/(1-y.bar))
+  if(family == "binomial") {
+    y.bar <- sum(y==1)/n
+    inter <- log(y.bar/(1-y.bar))
 
 
-  vecR <- (-y)/(1 + exp(y * inter))
-  lam.max <- sqrt(mean(vecR^2))
+    vecR <- (-y)/(1 + exp(y * inter))
+    lam.max <- sqrt(mean(vecR^2))
+
+  } else if(family == "gaussian") {
+    inter <- mean(y)
+    lam.max <- sqrt(mean(y^2))
+  }
 
   f_hat <- matrix(0, ncol = ncol(x_mat_ord), nrow = nrow(x_mat_ord))
 
@@ -499,7 +507,4 @@ find.lambdamax <- function(x_mat_ord, ord_mat, k,
   }
   return(lam.max)
 }
-
-
-
 

@@ -1,18 +1,17 @@
 
 simulation <- function(seed=1, n = 100,
                        num.vars = 100, noise.var = 1,
-                       scen.num = 3) {
+                       scen.num = 3, ncores = 8) {
   library(glmgen)
   library(GSAM)
   source('Generate_Data.R')
   source('Models.R')
-  source('spam.R')
   source('ssp.R')
   source('trendfilter.R')
 
-  # n = 1000; seed =1
-  # num.vars = 100; noise.var = 1;
-  # scen.num <- 5
+  # n = 100; seed =1
+  # num.vars = 6; noise.var = 1;
+  # scen.num <- 5; ncores = 8
 
   if(scen.num == 1){
     scen = scen1
@@ -29,18 +28,25 @@ simulation <- function(seed=1, n = 100,
   dat <- GenerateData(seed = seed, n = n, p = num.vars,
                       noise.var = noise.var, scenario = scen)
 
-  mod.ssp <- SimSPLINE(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
+  require(doParallel)
+  require(parallel)
+
+  # Begin cluster
+  #cl <- parallel::makeCluster(ncores)
+  doParallel::registerDoParallel(cores = ncores)
+
+  mod.ssp <- SimSPLINE(dat, lambda.max = NULL, lambda.min.ratio = 1e-2,
                        tol = 1e-4, max.iter = 300)
 
-  #mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = 2,
-  #                   lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
-  mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = 1,
+  mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = NULL,
+                    lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
+  mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = NULL,
                      lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
-  mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 0.1,
+  mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = NULL,
                        lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
 
-  fin.mse <- data.frame(rbind(mod.ssp, mod.tf.k1, mod.tf.k2))
-  fin.mse$method <- c("SSP", "TF1", "TF2")
+  fin.mse <- data.frame(rbind(mod.ssp,mod.tf.k0, mod.tf.k1, mod.tf.k2))
+  fin.mse$method <- c("SSP", "TF0", "TF1", "TF2")
   row.names(fin.mse) <- NULL
 
   dirname <- paste0("scen", scen.num, "_p", num.vars,"_n",n)
@@ -66,7 +72,9 @@ print(noise.var)
 scen.num <- as.numeric(args[[5]])
 print(scen.num)
 
+ncores <- as.numeric(args[[6]])
 
+print(args)
 
 library(glmgen)
 library(GSAM)
@@ -76,6 +84,6 @@ source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 
-simulation(seed, n, num.vars, noise.var, scen.num)
+simulation(seed, n, num.vars, noise.var, scen.num, ncores)
 
 q(save = "no")

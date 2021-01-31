@@ -242,7 +242,7 @@ dat_val <- dat[sam_set==3,]
 
 X <- as.matrix(dat_train[,-c(1,14110)])
 y <- as.numeric(as.character(dat_train$y))
-p <- 3
+p <- 10
 
 
 fit = list()
