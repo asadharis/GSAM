@@ -39,7 +39,7 @@ simulation <- function(seed=1, n = 100,
   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = 0.1,
                        lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
 
-  fin.mse <- data.frame(rbind(mod.ssp, mod.tf.k1, mod.tf.k2))
+  fin.mse <- data.frame(rbind(mod.ssp,mod.tf.k0, mod.tf.k1, mod.tf.k2))
   fin.mse$method <- c("SSP", "TF1", "TF2")
   row.names(fin.mse) <- NULL
 

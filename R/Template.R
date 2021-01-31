@@ -320,7 +320,7 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
   }
 
 
-  if(family == "binomial" & is.null(lambda.max)) {
+  if(is.null(lambda.max)) {
     lambda.max <- find.lambdamax(x_ord, ord, k,
     y, family = family,
     method = method, parallel = parallel,
@@ -329,10 +329,6 @@ fit.additive <- function(y, x, max.iter = 100, tol = 1e-4,
       cat("Lambda Max found: ", lambda.max, "\n")
     }
 
-  }
-
-  if(family == "gaussian" & is.null(lambda.max)) {
-    lambda.max <- sqrt(mean(y^2))
   }
 
 
@@ -467,12 +463,18 @@ find.lambdamax <- function(x_mat_ord, ord_mat, k,
                            method = "tf", parallel = FALSE,
                            ncores = 8, zeta = NULL, ...) {
   n <- length(y)
-  y.bar <- sum(y==1)/n
-  inter <- log(y.bar/(1-y.bar))
+  if(family == "binomial") {
+    y.bar <- sum(y==1)/n
+    inter <- log(y.bar/(1-y.bar))
 
 
-  vecR <- (-y)/(1 + exp(y * inter))
-  lam.max <- sqrt(mean(vecR^2))
+    vecR <- (-y)/(1 + exp(y * inter))
+    lam.max <- sqrt(mean(vecR^2))
+
+  } else if(family == "gaussian") {
+    inter <- mean(y)
+    lam.max <- sqrt(mean(y^2))
+  }
 
   f_hat <- matrix(0, ncol = ncol(x_mat_ord), nrow = nrow(x_mat_ord))
 
@@ -505,7 +507,4 @@ find.lambdamax <- function(x_mat_ord, ord_mat, k,
   }
   return(lam.max)
 }
-
-
-
 
