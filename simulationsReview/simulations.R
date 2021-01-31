@@ -72,7 +72,9 @@ print(noise.var)
 scen.num <- as.numeric(args[[5]])
 print(scen.num)
 
+ncores <- as.numeric(args[[6]])
 
+print(args)
 
 library(glmgen)
 library(GSAM)
@@ -82,6 +84,6 @@ source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 
-simulation(seed, n, num.vars, noise.var, scen.num)
+simulation(seed, n, num.vars, noise.var, scen.num, ncores)
 
 q(save = "no")
