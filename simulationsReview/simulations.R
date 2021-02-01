@@ -73,14 +73,12 @@ scen.num <- as.numeric(args[[5]])
 print(scen.num)
 
 ncores <- as.numeric(args[[6]])
-
-print(args)
+print(ncores)
 
 library(glmgen)
 library(GSAM)
 source('Generate_Data.R')
 source('Models.R')
-source('spam.R')
 source('ssp.R')
 source('trendfilter.R')
 

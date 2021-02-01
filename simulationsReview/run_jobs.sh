@@ -1,20 +1,13 @@
 #!/bin/bash
 #SBATCH --array=1-100
-#SBATCH --time=24:59:00           # time (HH:MM:SS)
+#SBATCH --time=05:59:00           # time (HH:MM:SS)
 #SBATCH --mem=1G
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
 #SBATCH --error=err/%j.err
 #SBATCH --output=err/%j.out
 #SBATCH --mail-user=asad.haris5862@gmail.com # Send email updates to you or someone else
-#SBATCH --mail-type=ALL         # send an email in all cases (job started, job ended, job aborted)
-
-if [ -d "output$1" ]
-then
-	echo "Dir Exists"
-else
-	mkdir output$1
-fi
+#SBATCH --mail-type=BEGIN         # send an email in all cases (job started, job ended, job aborted)
 
 
 ## ARGUMENTS ARE:
@@ -30,7 +23,7 @@ module load nixpkgs/16.09 gcc/7.3.0 r/3.6.1
 
 
 export R_LIBS=~/local/R_libs/
-R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  6 1 3" simulations.R output$1/$SLURM_ARRAY_TASK_ID.Rout
+R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  6 1 3 $SLURM_CPUS_PER_TASK" simulations.R bla.Rout
 
 #### SBATCH --account=def-rwplatt   # replace this with your own account
 #### SBATCH --ntasks=4              # number of processes
