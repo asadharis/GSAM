@@ -28,7 +28,7 @@ SimTF <- function(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
   # First we fit the lambda, lambda^2 models
   mse0 <- oracle.TF(dat,lambda.max = lambda.max,
                     lambda.min.ratio = lambda.min.ratio,
-                    tol = tol, zeta = NULL,k=2,...)
+                    tol = tol, zeta = NULL,...)
 
   zeta.len <- 10
 
