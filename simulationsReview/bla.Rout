@@ -68,13 +68,13 @@ Type 'q()' to quit R.
 +   fin.mse$method <- c("SSP", "TF0", "TF1", "TF2")
 +   row.names(fin.mse) <- NULL
 + 
-+   dirname <- paste0("scen", scen.num, "_p", num.vars,"_n",n)
++   dirname <- paste0("scen", scen.num, "/p", num.vars,"/n",n)
 +   filename <- paste0(dirname, "/",seed, ".RData")
 + 
 +   if(dir.exists(dirname)) {
 +     save(list = c("fin.mse"), file = filename)
 +   } else {
-+     dir.create(dirname)
++     dir.create(dirname, recursive = TRUE)
 +     save(list = c("fin.mse"), file = filename)
 +   }
 + }
@@ -82,11 +82,12 @@ Type 'q()' to quit R.
 > args <-  commandArgs(T)
 > seed <- as.numeric(args[[1]])
 > print(seed)
-[1] 94
-> n <- as.numeric(args[[2]])
-> print(n)
-[1] 100
+[1] 41
+> n <- as.numeric(args[[2]])>> rint(n)
+
+[1]100
 > num.vars <- as.numeric(args[[3]])
+
 > print(num.vars)
 [1] 6
 > noise.var <- as.numeric(args[[4]])
@@ -94,7 +95,7 @@ Type 'q()' to quit R.
 [1] 1
 > scen.num <- as.numeric(args[[5]])
 > print(scen.num)
-[1] 3
+[1] 4
 > 
 > ncores <- as.numeric(args[[6]])
 > print(ncores)
@@ -102,6 +103,7 @@ Type 'q()' to quit R.
 > 
 > library(glmgen)
 > library(GSAM)
+> library(splines)
 > source('Generate_Data.R')
 > source('Models.R')
 > source('ssp.R')
@@ -112,11 +114,8 @@ Loading required package: doParallel
 Loading required package: foreach
 Loading required package: iterators
 Loading required package: parallel
-Error in fit.additive(y = dat$y, x = dat$x, family = "gaussian", method = "tf",  : 
-  formal argument "k" matched by multiple actual arguments
-Calls: simulation -> SimTF -> oracle.TF
-Execution halted
-ing message:
-In mclapply(argsList, FUN, mc.preschedule = preschedule, mc.set.seed = set.seed,  :
-  scheduled core 1 did not deliver a result, all values of the job will be affected
-Execution halted
+> 
+> q(save = "no")
+> proc.time()
+   user  system elapsed 
+ 38.355   4.322 233.638 

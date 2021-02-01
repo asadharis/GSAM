@@ -1,6 +1,9 @@
 # Test files
 tests/*
 
+#Error logs
+*/err/*
+
 # Compiled code
 src/*.o
 src/*.so

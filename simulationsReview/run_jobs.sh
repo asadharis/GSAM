@@ -12,10 +12,10 @@
 
 ## ARGUMENTS ARE:
 ## 1. seed
-## 2. n: Sample Size
-## 3. p: Number of Variables
+## 2. n: Sample Size $1
+## 3. p: Number of Variables $2
 ## 4. Variance of the noise
-## 5. scen: Scenario number, we will use 3 default.
+## 5. scen: Scenario number, we will use 3 default. $3
 ## 6. number of cores.
 
 
@@ -23,7 +23,7 @@ module load nixpkgs/16.09 gcc/7.3.0 r/3.6.1
 
 
 export R_LIBS=~/local/R_libs/
-R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1  6 1 3 $SLURM_CPUS_PER_TASK" simulations.R bla.Rout
+R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1 $2 1 $3 $SLURM_CPUS_PER_TASK" simulations.R bla.Rout
 
 #### SBATCH --account=def-rwplatt   # replace this with your own account
 #### SBATCH --ntasks=4              # number of processes
