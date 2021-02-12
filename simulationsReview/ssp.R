@@ -28,14 +28,13 @@ SimSPLINE <- function(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
   # First we fit the lambda, lambda^2 models
   mse0 <- oracle.SPLINE(dat,lambda.max = lambda.max,
                     lambda.min.ratio = lambda.min.ratio,
-                    tol = tol, zeta = NULL, ...)
+                    tol = tol, zeta = NULL)#, ...)
 
   zeta.len <- 10
-
   zeta.seq <- seq(1e-3, 1-1e-5, length = zeta.len)
   mse.zeta <- tryCatch(ssp_par(dat,lambda.max ,
                                  lambda.min.ratio ,
-                                 tol, zeta.seq = zeta.seq,...),
+                                 tol, zeta.seq = zeta.seq),
                          error = function(e) print(e))
 
   mse1 <- min(mse.zeta)
@@ -44,6 +43,34 @@ SimSPLINE <- function(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
   return(c("mse0" = mse0,
               "mse1" = mse1))
 }
+
+
+SimSPLINE2 <- function(dat, lambda.max = 1, lambda.min.ratio = 1e-2,
+                      tol = 1e-4, ...) {
+  require(GSAM)
+
+   # lambda.max = NULL; lambda.min.ratio = 1e-2
+   # tol = 1e-4;max.iter = 300
+
+  # First we fit the lambda, lambda^2 models
+  mse0 <- oracle.SPLINE(dat,lambda.max = lambda.max,
+                        lambda.min.ratio = lambda.min.ratio,
+                        tol = tol, zeta = NULL)#, ...)
+
+  zeta.len <- 30
+  zeta.seq <- seq(0.7, 0.999, length = zeta.len)
+  mse.zeta <- tryCatch(ssp_par(dat,lambda.max ,
+                               lambda.min.ratio ,
+                               tol, zeta.seq = zeta.seq),
+                       error = function(e) print(e))
+
+  mse1 <- min(mse.zeta)
+
+
+  return(c("mse_coupled" = mse0,
+           "mse_decoupled" = mse1))
+}
+
 
 ##########################################################
 ######## Temp function for parallel computing ############
