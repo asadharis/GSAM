@@ -58,7 +58,7 @@ simulation <- function(seed=1, n = 100,
   fin.mse$method <- c("SSP", "TF0", "TF1", "TF2")
   row.names(fin.mse) <- NULL
 
-  dirname <- paste0("scen", scen.num, "/p", num.vars,"/n",n)
+  dirname <- paste0("Decouple_scen", scen.num, "/p", num.vars,"/n",n)
   filename <- paste0(dirname, "/",seed, ".RData")
 
   if(dir.exists(dirname)) {

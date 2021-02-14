@@ -3,7 +3,7 @@
 #SBATCH --time=05:59:00           # time (HH:MM:SS)
 #SBATCH --mem=1G
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=16
 #SBATCH --error=err/%j.err
 #SBATCH --output=err/%j.out
 #SBATCH --mail-user=asad.haris5862@gmail.com # Send email updates to you or someone else
@@ -23,7 +23,7 @@ module load nixpkgs/16.09 gcc/7.3.0 r/3.6.1
 
 
 export R_LIBS=~/local/R_libs/
-R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1 $2 1 $3 $SLURM_CPUS_PER_TASK" simulations.R bla.Rout
+R CMD BATCH --no-save --no-restore "--args $SLURM_ARRAY_TASK_ID $1 $2 1 $3 $SLURM_CPUS_PER_TASK" simulations_Decouple.R bla.Rout
 
 #### SBATCH --account=def-rwplatt   # replace this with your own account
 #### SBATCH --ntasks=4              # number of processes

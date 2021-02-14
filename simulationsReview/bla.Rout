@@ -17,10 +17,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> # In this file we add to our existing simulation results to
+> # Generate the case where the decoupled tuning parameters always yield nice
+> # results.
+> 
 > 
 > simulation <- function(seed=1, n = 100,
 +                        num.vars = 100, noise.var = 1,
 +                        scen.num = 3, ncores = 8) {
++ 
++   # seed=1; n = 100;
++   # num.vars = 6; noise.var = 1;
++   # scen.num = 3; ncores = 8
++ 
 +   library(glmgen)
 +   library(GSAM)
 +   source('Generate_Data.R')
@@ -54,21 +63,21 @@ Type 'q()' to quit R.
 +   #cl <- parallel::makeCluster(ncores)
 +   doParallel::registerDoParallel(cores = ncores)
 + 
-+   mod.ssp <- SimSPLINE(dat, lambda.max = NULL, lambda.min.ratio = 1e-2,
++   mod.ssp <- SimSPLINE2(dat, lambda.max = NULL, lambda.min.ratio = 1e-2,
 +                        tol = 1e-4, max.iter = 300)
 + 
-+   mod.tf.k0 <- SimTF(dat, k = 0, lambda.max = NULL,
-+                     lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
-+   mod.tf.k1 <- SimTF(dat, k = 1, lambda.max = NULL,
++   mod.tf.k0 <- SimTF2(dat, k = 0, lambda.max = NULL,
++                      lambda.min.ratio = 1e-2, tol = 1e-4, max.iter = 300)
++   mod.tf.k1 <- SimTF2(dat, k = 1, lambda.max = NULL,
 +                      lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
-+   mod.tf.k2 <- SimTF(dat, k = 2, lambda.max = NULL,
-+                        lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
++   mod.tf.k2 <- SimTF2(dat, k = 2, lambda.max = NULL,
++                      lambda.min.ratio = 1e-3, tol = 1e-4, max.iter = 300)
 + 
 +   fin.mse <- data.frame(rbind(mod.ssp,mod.tf.k0, mod.tf.k1, mod.tf.k2))
 +   fin.mse$method <- c("SSP", "TF0", "TF1", "TF2")
 +   row.names(fin.mse) <- NULL
 + 
-+   dirname <- paste0("scen", scen.num, "/p", num.vars,"/n",n)
++   dirname <- paste0("Decouple_scen", scen.num, "/p", num.vars,"/n",n)
 +   filename <- paste0(dirname, "/",seed, ".RData")
 + 
 +   if(dir.exists(dirname)) {
@@ -82,24 +91,23 @@ Type 'q()' to quit R.
 > args <-  commandArgs(T)
 > seed <- as.numeric(args[[1]])
 > print(seed)
-[1] 41
-> n <- as.numeric(args[[2]])>> rint(n)
-
-[1]100
+[1] 97
+> n <- as.numeric(args[[2]])
+> print(n)
+[1] 1000
 > num.vars <- as.numeric(args[[3]])
-
 > print(num.vars)
-[1] 6
+[1] 100
 > noise.var <- as.numeric(args[[4]])
 > print(noise.var)
 [1] 1
 > scen.num <- as.numeric(args[[5]])
 > print(scen.num)
-[1] 4
+[1] 3
 > 
 > ncores <- as.numeric(args[[6]])
 > print(ncores)
-[1] 10
+[1] 16
 > 
 > library(glmgen)
 > library(GSAM)
@@ -113,9 +121,24 @@ Type 'q()' to quit R.
 Loading required package: doParallel
 Loading required package: foreach
 Loading required package: iterators
-Loading required package: parallel
+Loading required package: parallelWWarning messages:
+1: In mclapply(argsList, FUN, mc.preschedule = preschedule, mc.set.seed = set.seed,  :
+  scheduled cores 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16 did not deliver results, all values of the jobs will be affected
+2: In mclapply(argsList, FUN, mc.preschedule = preschedule, mc.set.seed = set.seed,  :
+  scheduled cores 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 did not deliver results, all values of the jobs will be affected
+3: In mclapply(argsList, FUN, mc.preschedule = preschedule, mc.set.seed = set.seed,  :
+  scheduled cores 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 15, 16 did not deliver results, all values of the jobs will be affected
+4: In mclapply(argsList, FUN, mc.preschedule = preschedule, mc.set.seed = set.seed,  :
+  scheduled cores 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16 did not deliver results, all values of the jobs will be affected
 > 
 > q(save = "no")
 > proc.time()
-   user  system elapsed 
- 38.355   4.322 233.638 
+    user   system  elapsed 
+6120.680  104.500 6084.543 
+.419 
+80 
+ q(save = "no")
+> proc.time()
+    user   system  elapsed 
+2425.095   38.115 1496.401 
+68 1397.634 
